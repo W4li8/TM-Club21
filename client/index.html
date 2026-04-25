@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TM Club 21 – Table Topics Olympics</title>
+<style>
+/* ── Reset & Base ───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --gold: #FFD700;
+  --gold-dark: #C8A800;
+  --navy: #002868;
+  --navy-light: #003a8c;
+  --white: #FFFFFF;
+  --offwhite: #F4F6FA;
+  --gray: #8892A0;
+  --gray-light: #E2E8F0;
+  --red: #BF0A30;
+  --green: #2E7D32;
+  --yellow: #F9A825;
+  --radius: 10px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.12);
+  --border-size: 6px;
+}
+
+html, body {
+  min-height: 100%;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--offwhite);
+  color: #1a2233;
+}
+
+body {
+  position: relative;
+}
+
+/* ── Timer border overlay ────────────────────────────────────── */
+#timer-border {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  border-radius: 0;
+}
+
+#timer-border.border-green {
+  animation: none;
+  border: var(--border-size) solid var(--green);
+}
+#timer-border.border-yellow {
+  border: var(--border-size) solid var(--yellow);
+}
+#timer-border.border-red {
+  border: var(--border-size) solid var(--red);
+}
+#timer-border.border-black {
+  border: var(--border-size) solid #111;
+  animation: pulse-border 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-border {
+  from { border-color: #111; box-shadow: inset 0 0 0 2px #111; }
+  to   { border-color: #555; box-shadow: inset 0 0 0 2px #555; }
+}
+
+/* Conic sweep canvas fills the timer-border during sweep phases */
+#sweep-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Layout ──────────────────────────────────────────────────── */
+#app {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 0 80px 0;
+  min-height: 100vh;
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+header {
+  background: var(--navy);
+  color: var(--white);
+  padding: 18px 20px 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+header svg { flex-shrink: 0; }
+
+.header-text { line-height: 1.2; }
+.header-text h1 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--gold);
+}
+.header-text p {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.7);
+  margin-top: 1px;
+}
+
+.header-right {
+  margin-left: auto;
+  text-align: right;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.6);
+}
+.header-right strong { color: var(--gold); font-size: 0.85rem; }
+
+/* ── Cards / Sections ────────────────────────────────────────── */
+.card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  margin: 14px 12px 0;
+}
+
+.card h2 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--gray);
+  margin-bottom: 12px;
+}
+
+.card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* ── Gate ────────────────────────────────────────────────────── */
+#gate {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  background: var(--navy);
+}
+
+#gate-logo { margin-bottom: 24px; }
+
+.gate-card {
+  background: var(--white);
+  border-radius: 14px;
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+}
+
+.gate-card h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.gate-card p {
+  font-size: 0.85rem;
+  color: var(--gray);
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+/* ── Forms ───────────────────────────────────────────────────── */
+.form-group { margin-bottom: 14px; }
+
+label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 5px;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="number"],
+select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--gray-light);
+  border-radius: 7px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+  background: var(--white);
+  color: #1a2233;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--navy);
+}
+
+.error-msg {
+  color: var(--red);
+  font-size: 0.82rem;
+  margin-top: 6px;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-primary { background: var(--navy); color: var(--white); }
+.btn-gold    { background: var(--gold); color: var(--navy); }
+.btn-danger  { background: var(--red); color: var(--white); }
+.btn-green   { background: var(--green); color: var(--white); }
+.btn-outline {
+  background: transparent;
+  border: 1.5px solid var(--navy);
+  color: var(--navy);
+}
+.btn-sm { padding: 6px 12px; font-size: 0.82rem; }
+.btn-full { width: 100%; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+/* ── Role picker ─────────────────────────────────────────────── */
+.role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.role-btn {
+  padding: 16px 10px;
+  border: 2px solid var(--gray-light);
+  border-radius: 10px;
+  background: var(--white);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+.role-btn:hover { border-color: var(--navy-light); }
+.role-btn.selected { border-color: var(--gold); background: #fffbe6; }
+.role-btn span { display: block; font-size: 1.5rem; margin-bottom: 4px; }
+
+/* ── Question display ────────────────────────────────────────── */
+#question-display {
+  background: linear-gradient(135deg, var(--navy), var(--navy-light));
+  color: var(--white);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin: 14px 12px 0;
+}
+
+#question-display .q-theme {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+#question-display .q-text {
+  font-size: 1.1rem;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+/* ── Timer ───────────────────────────────────────────────────── */
+#timer-display {
+  text-align: center;
+  padding: 22px 18px;
+}
+
+.timer-clock {
+  font-size: 3.5rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  font-variant-numeric: tabular-nums;
+  color: var(--navy);
+  line-height: 1;
+}
+
+.timer-speaker {
+  font-size: 0.95rem;
+  color: var(--gray);
+  margin-top: 6px;
+}
+
+.timer-status-pill {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.pill-idle   { background: var(--gray-light); color: var(--gray); }
+.pill-running{ background: #e6f7ec; color: var(--green); }
+.pill-stopped{ background: #fdecea; color: var(--red); }
+
+/* ── Voting ──────────────────────────────────────────────────── */
+.vote-progress {
+  margin-bottom: 12px;
+}
+.progress-bar-outer {
+  width: 100%;
+  height: 8px;
+  background: var(--gray-light);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.progress-bar-inner {
+  height: 100%;
+  background: var(--gold);
+  border-radius: 99px;
+  transition: width 0.4s;
+}
+.progress-label {
+  font-size: 0.8rem;
+  color: var(--gray);
+  margin-top: 4px;
+}
+
+.vote-candidate-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.vote-candidate-btn {
+  padding: 12px 8px;
+  border: 2px solid var(--gray-light);
+  border-radius: 8px;
+  background: var(--white);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--navy);
+  text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+}
+.vote-candidate-btn:hover { border-color: var(--navy-light); }
+.vote-candidate-btn.selected { border-color: var(--gold); background: #fffbe6; }
+
+/* Results bar chart */
+.results-chart { margin-top: 10px; }
+.result-row { margin-bottom: 10px; }
+.result-row-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.result-row-label .count { color: var(--gray); font-weight: 400; }
+.result-bar-outer {
+  width: 100%;
+  height: 14px;
+  background: var(--gray-light);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.result-bar-inner {
+  height: 100%;
+  background: var(--navy);
+  border-radius: 99px;
+  transition: width 0.5s;
+}
+.result-row.winner .result-bar-inner { background: var(--gold-dark); }
+.result-row.winner .result-row-label { color: #7a6000; }
+
+/* ── Bracket ─────────────────────────────────────────────────── */
+.bracket-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.bracket-slot {
+  border: 1.5px solid var(--gray-light);
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+}
+.bracket-slot .slot-label {
+  font-size: 0.7rem;
+  color: var(--gray);
+  margin-bottom: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.bracket-slot .slot-name {
+  font-weight: 600;
+  color: var(--navy);
+}
+.bracket-slot.winner { border-color: var(--gold); background: #fffbe6; }
+.bracket-slot.tbd { opacity: 0.5; font-style: italic; }
+
+/* ── Group list ──────────────────────────────────────────────── */
+.group-card {
+  border: 1.5px solid var(--gray-light);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.group-card.active { border-color: var(--gold); background: #fffbe6; }
+.group-card.done { opacity: 0.6; }
+
+.group-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--navy);
+  margin-bottom: 6px;
+}
+
+.member-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.member-chip {
+  background: var(--gray-light);
+  color: var(--navy);
+  border-radius: 99px;
+  padding: 2px 9px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.member-chip.current { background: var(--gold); color: var(--navy); }
+
+/* ── Admin section ───────────────────────────────────────────── */
+#admin-section {
+  border-top: 3px solid var(--gold);
+  margin-top: 20px;
+}
+
+#admin-section .admin-header {
+  background: var(--navy);
+  color: var(--gold);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 8px 18px;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.settings-grid .form-group { margin-bottom: 0; }
+
+.late-alert {
+  background: #fff3e0;
+  border: 1.5px solid var(--yellow);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* ── Wheel animation ─────────────────────────────────────────── */
+#wheel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+}
+#wheel-overlay.hidden { display: none; }
+
+.wheel-box {
+  background: var(--white);
+  border-radius: 16px;
+  padding: 30px 24px;
+  max-width: 340px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+}
+.wheel-box h3 { color: var(--navy); margin-bottom: 16px; }
+
+#wheel-names {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--navy);
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: none;
+}
+#wheel-names.spinning { color: var(--gold); }
+
+.wheel-result {
+  margin-top: 14px;
+  font-size: 0.85rem;
+  color: var(--gray);
+}
+
+/* ── Participant list ────────────────────────────────────────── */
+.participant-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--gray-light);
+  font-size: 0.88rem;
+}
+.participant-row:last-child { border-bottom: none; }
+.participant-role-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 99px;
+  text-transform: uppercase;
+}
+.badge-competitor { background: var(--navy); color: var(--white); }
+.badge-observer   { background: var(--gray-light); color: var(--gray); }
+.badge-admin      { background: var(--gold); color: var(--navy); }
+
+/* ── Voting timer ────────────────────────────────────────────── */
+.voting-countdown {
+  font-size: 0.82rem;
+  color: var(--gray);
+  margin-bottom: 6px;
+}
+
+/* ── Phase badge ─────────────────────────────────────────────── */
+.phase-badge {
+  display: inline-block;
+  background: var(--gold);
+  color: var(--navy);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  margin-bottom: 10px;
+}
+
+/* ── Utilities ───────────────────────────────────────────────── */
+.hidden { display: none !important; }
+.mt8 { margin-top: 8px; }
+.mt12 { margin-top: 12px; }
+.center { text-align: center; }
+.muted { color: var(--gray); font-size: 0.85rem; }
+hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px 0; }
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 400px) {
+  .timer-clock { font-size: 2.8rem; }
+  .vote-candidate-grid { grid-template-columns: 1fr; }
+  .settings-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Timer sweep canvas -->
+<canvas id="sweep-canvas"></canvas>
+<!-- Pulsing solid border overlay -->
+<div id="timer-border"></div>
+
+<!-- ── Password / Name Gate ─────────────────────────────────── -->
+<div id="gate">
+  <div id="gate-logo">
+    <!-- Olympic rings SVG -->
+    <svg width="120" height="52" viewBox="0 0 120 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="16" stroke="#0081C8" stroke-width="4" fill="none"/>
+      <circle cx="60" cy="20" r="16" stroke="#000000" stroke-width="4" fill="none"/>
+      <circle cx="100" cy="20" r="16" stroke="#EE334E" stroke-width="4" fill="none"/>
+      <circle cx="40" cy="36" r="16" stroke="#FCB131" stroke-width="4" fill="none"/>
+      <circle cx="80" cy="36" r="16" stroke="#00A651" stroke-width="4" fill="none"/>
+    </svg>
+    <div style="text-align:center;color:#FFD700;font-size:0.85rem;font-weight:700;letter-spacing:1px;margin-top:6px;">TM CLUB 21</div>
+  </div>
+
+  <div class="gate-card">
+    <!-- Step 1: Password -->
+    <div id="gate-password-step">
+      <h2>Table Topics Olympics</h2>
+      <p>Enter your access password to join.</p>
+      <div class="form-group">
+        <label for="gate-pwd-input">Password</label>
+        <input type="password" id="gate-pwd-input" placeholder="Enter password" autocomplete="off" />
+        <div class="error-msg hidden" id="gate-pwd-error"></div>
+      </div>
+      <button class="btn btn-primary btn-full" id="gate-pwd-btn">Continue</button>
+    </div>
+
+    <!-- Step 2: Name -->
+    <div id="gate-name-step" class="hidden">
+      <h2>What's your name?</h2>
+      <p>Your name is your unique ID — use the same name to rejoin.</p>
+      <div class="form-group">
+        <label for="gate-name-input">Display Name</label>
+        <input type="text" id="gate-name-input" placeholder="e.g. Jane Smith" maxlength="40" autocomplete="off" />
+        <div class="error-msg hidden" id="gate-name-error"></div>
+      </div>
+      <button class="btn btn-primary btn-full" id="gate-name-btn">Next</button>
+    </div>
+
+    <!-- Step 3: Role (competitors only, if registration open) -->
+    <div id="gate-role-step" class="hidden">
+      <h2>How will you participate?</h2>
+      <p id="gate-role-subtitle">Choose your role for today's event.</p>
+      <div class="role-grid" id="gate-role-grid">
+        <div class="role-btn" data-role="competitor" id="role-compete">
+          <span>🎤</span>Compete
+        </div>
+        <div class="role-btn" data-role="observer" id="role-observe">
+          <span>👀</span>Observe &amp; Vote
+        </div>
+      </div>
+      <div class="error-msg hidden" id="gate-role-error"></div>
+      <button class="btn btn-gold btn-full mt8" id="gate-role-btn">Join Event</button>
+    </div>
+
+    <!-- Rejoin prompt -->
+    <div id="gate-rejoin-step" class="hidden">
+      <h2>Welcome back!</h2>
+      <p id="rejoin-msg">That name is already registered. Rejoin as <strong id="rejoin-name-label"></strong>?</p>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="gate-rejoin-yes">Yes, rejoin</button>
+        <button class="btn btn-outline" id="gate-rejoin-no">Use different name</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main App ─────────────────────────────────────────────── -->
+<div id="app" class="hidden">
+  <!-- Header -->
+  <header>
+    <svg width="56" height="28" viewBox="0 0 120 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="16" stroke="#0081C8" stroke-width="5" fill="none"/>
+      <circle cx="60" cy="20" r="16" stroke="#fff" stroke-width="5" fill="none"/>
+      <circle cx="100" cy="20" r="16" stroke="#EE334E" stroke-width="5" fill="none"/>
+      <circle cx="40" cy="36" r="16" stroke="#FCB131" stroke-width="5" fill="none"/>
+      <circle cx="80" cy="36" r="16" stroke="#00A651" stroke-width="5" fill="none"/>
+    </svg>
+    <div class="header-text">
+      <h1>Table Topics Olympics</h1>
+      <p>TM Club 21</p>
+    </div>
+    <div class="header-right">
+      <strong id="hdr-name">—</strong><br/>
+      <span id="hdr-role">—</span>
+    </div>
+  </header>
+
+  <!-- Phase badge -->
+  <div style="margin: 14px 12px 0;">
+    <span class="phase-badge" id="phase-badge">Registration</span>
+    <span class="muted" id="phase-label-detail"></span>
+  </div>
+
+  <!-- Current question -->
+  <div id="question-display" class="hidden">
+    <div class="q-theme" id="q-theme"></div>
+    <div class="q-text" id="q-text"></div>
+  </div>
+
+  <!-- Timer card -->
+  <div class="card" id="timer-card">
+    <h2>Current Speaker</h2>
+    <div id="timer-display">
+      <div class="timer-clock" id="timer-clock">0:00</div>
+      <div class="timer-speaker" id="timer-speaker">No speaker active</div>
+      <div>
+        <span class="timer-status-pill pill-idle" id="timer-pill">Idle</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Voting card -->
+  <div class="card hidden" id="voting-card">
+    <h2>Voting</h2>
+    <div class="voting-countdown hidden" id="voting-countdown"></div>
+    <div class="vote-progress hidden" id="vote-progress-wrap">
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="vote-progress-bar" style="width:0%"></div>
+      </div>
+      <div class="progress-label" id="vote-progress-label">0 / 0 votes cast</div>
+    </div>
+    <div id="vote-buttons-wrap"></div>
+    <div class="results-chart hidden" id="results-chart"></div>
+  </div>
+
+  <!-- Groups / Bracket -->
+  <div class="card" id="bracket-card">
+    <h2>Groups &amp; Bracket</h2>
+    <div id="bracket-body">
+      <p class="muted">Registration in progress — bracket will appear after draw.</p>
+    </div>
+  </div>
+
+  <!-- Participants -->
+  <div class="card" id="participants-card">
+    <h2>Participants (<span id="participants-count">0</span>)</h2>
+    <div id="participants-list"></div>
+  </div>
+
+  <!-- ══ ADMIN SECTION ══════════════════════════════════════════ -->
+  <div id="admin-section" class="hidden">
+    <div class="admin-header">⚙ Admin Controls</div>
+
+    <!-- Settings card -->
+    <div class="card">
+      <h2>Settings</h2>
+      <div class="settings-grid">
+        <div class="form-group">
+          <label>Silence end (s)</label>
+          <input type="number" id="set-silenceEnd" value="45" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Green end (s)</label>
+          <input type="number" id="set-greenEnd" value="60" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Yellow end (s)</label>
+          <input type="number" id="set-yellowEnd" value="75" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Red/cutoff end (s)</label>
+          <input type="number" id="set-redEnd" value="90" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Voting window (s)</label>
+          <input type="number" id="set-votingWindowSeconds" value="60" min="10" />
+        </div>
+        <div class="form-group">
+          <label>Num groups</label>
+          <input type="number" id="set-numGroups" value="5" min="1" />
+        </div>
+        <div class="form-group">
+          <label>Max per group</label>
+          <input type="number" id="set-maxPerGroup" placeholder="auto" min="1" />
+        </div>
+        <div class="form-group">
+          <label>Break (min)</label>
+          <input type="number" id="set-breakMinutes" value="5" min="0" />
+        </div>
+      </div>
+      <hr class="divider" />
+      <div class="form-group">
+        <label>Group Stage label</label>
+        <input type="text" id="set-label-group_stage" value="Group Stage" />
+      </div>
+      <div class="form-group">
+        <label>Quarter-Debate label</label>
+        <input type="text" id="set-label-quarter_debate" value="Quarter-Debate" />
+      </div>
+      <div class="form-group">
+        <label>Semifinal label</label>
+        <input type="text" id="set-label-semi_final" value="Semifinal" />
+      </div>
+      <div class="form-group">
+        <label>Final label</label>
+        <input type="text" id="set-label-final" value="Final" />
+      </div>
+      <button class="btn btn-primary btn-sm mt8" id="admin-save-settings">Save Settings</button>
+    </div>
+
+    <!-- Draw management -->
+    <div class="card">
+      <h2>Draw Management</h2>
+      <div id="admin-late-alerts"></div>
+      <button class="btn btn-gold" id="admin-lock-draw">Lock Registration &amp; Generate Draw</button>
+      <div id="admin-draw-info" class="mt8 muted"></div>
+    </div>
+
+    <!-- Round control -->
+    <div class="card" id="admin-round-card">
+      <h2>Round Control</h2>
+      <div id="admin-round-body">
+        <p class="muted">Draw must be locked to control rounds.</p>
+      </div>
+    </div>
+
+    <!-- Voting control -->
+    <div class="card" id="admin-voting-card">
+      <h2>Voting Control</h2>
+      <div id="admin-voting-body">
+        <p class="muted">No active round.</p>
+      </div>
+    </div>
+
+    <!-- Phase advance -->
+    <div class="card">
+      <h2>Phase Control</h2>
+      <div class="btn-row">
+        <button class="btn btn-outline btn-sm" id="admin-start-quarter">→ Quarter-Debate</button>
+        <button class="btn btn-outline btn-sm" id="admin-start-semi">→ Semifinal</button>
+        <button class="btn btn-outline btn-sm" id="admin-start-final">→ Final</button>
+        <button class="btn btn-outline btn-sm" id="admin-close">Close Event</button>
+      </div>
+      <hr class="divider" />
+      <button class="btn btn-danger btn-sm" id="admin-reset">Reset Everything</button>
+    </div>
+  </div>
+</div>
+
+<!-- Wheel overlay -->
+<div id="wheel-overlay" class="hidden">
+  <div class="wheel-box">
+    <h3>🎡 Spinning for order…</h3>
+    <div id="wheel-names">—</div>
+    <div class="wheel-result" id="wheel-result"></div>
+    <button class="btn btn-primary mt8" id="wheel-close-btn">Done</button>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+const S = {
+  password: '',
+  name: '',
+  role: '',       // 'competitor' | 'observer'
+  isAdmin: false,
+  pendingRole: null,
+
+  serverState: null,
+  lastVersion: -1,
+  pollTimer: null,
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function qs(sel) { return document.querySelector(sel); }
+function qsa(sel) { return document.querySelectorAll(sel); }
+function show(el) { if (typeof el === 'string') el = qs(el); el && el.classList.remove('hidden'); }
+function hide(el) { if (typeof el === 'string') el = qs(el); el && el.classList.add('hidden'); }
+function setText(sel, txt) { const el = typeof sel === 'string' ? qs(sel) : sel; if (el) el.textContent = txt; }
+
+async function api(method, path, body, extraHeaders = {}) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json', 'x-password': S.password, ...extraHeaders },
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  const json = await r.json();
+  if (!r.ok) throw new Error(json.error || 'Request failed');
+  return json;
+}
+
+function formatTime(ms) {
+  if (ms == null || ms < 0) return '0:00';
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  return `${m}:${String(s % 60).padStart(2, '0')}`;
+}
+
+// ── Gate ──────────────────────────────────────────────────────────────────────
+
+qs('#gate-pwd-input').addEventListener('keydown', e => { if (e.key === 'Enter') qs('#gate-pwd-btn').click(); });
+qs('#gate-name-input').addEventListener('keydown', e => { if (e.key === 'Enter') qs('#gate-name-btn').click(); });
+
+qs('#gate-pwd-btn').addEventListener('click', async () => {
+  const pwd = qs('#gate-pwd-input').value.trim();
+  const errEl = qs('#gate-pwd-error');
+  hide(errEl); errEl.textContent = '';
+  if (!pwd) { show(errEl); errEl.textContent = 'Password required.'; return; }
+  try {
+    const res = await api('POST', '/api/auth', { password: pwd });
+    S.password = pwd;
+    S.isAdmin = res.role === 'admin';
+    hide('#gate-password-step');
+    show('#gate-name-step');
+    qs('#gate-name-input').focus();
+  } catch (e) {
+    show(errEl); errEl.textContent = 'Incorrect password.';
+  }
+});
+
+qs('#gate-name-btn').addEventListener('click', async () => {
+  const name = qs('#gate-name-input').value.trim();
+  const errEl = qs('#gate-name-error');
+  hide(errEl); errEl.textContent = '';
+  if (!name) { show(errEl); errEl.textContent = 'Name required.'; return; }
+
+  try {
+    const res = await api('POST', '/api/join', { name, password: S.password });
+    S.name = name;
+    S.role = res.participant.role;
+    if (res.rejoined) {
+      enterApp();
+    } else {
+      // Check if we need role selection
+      const st = await api('GET', '/api/state');
+      const canCompete = st.phase === 'registration' ||
+        st.groups.some(g => g.status === 'pending' && g.members.length < (st.settings.maxPerGroup || 999));
+      if (!canCompete || S.role === 'observer') {
+        // No choice — observer only or already assigned
+        enterApp();
+      } else {
+        hide('#gate-name-step');
+        show('#gate-role-step');
+        // Show/hide compete button based on slots
+        if (!canCompete) {
+          hide('#role-compete');
+          qs('#gate-role-subtitle').textContent = 'All competitor slots filled — you will observe and vote.';
+        }
+      }
+    }
+  } catch (e) {
+    if (e.message === 'Name taken') {
+      // Offer rejoin
+      S.name = name;
+      qs('#rejoin-name-label').textContent = name;
+      hide('#gate-name-step');
+      show('#gate-rejoin-step');
+    } else {
+      show(errEl); errEl.textContent = e.message;
+    }
+  }
+});
+
+// Role selection
+let selectedRole = 'observer';
+qsa('.role-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    qsa('.role-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedRole = btn.dataset.role;
+  });
+});
+// default select observer
+qs('#role-observe').classList.add('selected');
+
+qs('#gate-role-btn').addEventListener('click', async () => {
+  const errEl = qs('#gate-role-error');
+  hide(errEl);
+  try {
+    // Re-join with chosen role
+    await api('POST', '/api/join', { name: S.name, role: selectedRole, password: S.password });
+    S.role = selectedRole;
+    enterApp();
+  } catch (e) {
+    show(errEl); errEl.textContent = e.message;
+  }
+});
+
+qs('#gate-rejoin-yes').addEventListener('click', async () => {
+  try {
+    const res = await api('POST', '/api/join', { name: S.name, rejoin: true, password: S.password });
+    S.role = res.participant.role;
+    enterApp();
+  } catch (e) { alert(e.message); }
+});
+
+qs('#gate-rejoin-no').addEventListener('click', () => {
+  qs('#gate-name-input').value = '';
+  hide('#gate-rejoin-step');
+  show('#gate-name-step');
+  qs('#gate-name-input').focus();
+});
+
+// ── App entry ─────────────────────────────────────────────────────────────────
+
+function enterApp() {
+  hide('#gate');
+  show('#app');
+  setText('#hdr-name', S.name);
+  setText('#hdr-role', S.isAdmin ? 'Admin' : S.role === 'competitor' ? 'Competitor' : 'Observer');
+  if (S.isAdmin) show('#admin-section');
+  startPolling();
+}
+
+// ── Polling ───────────────────────────────────────────────────────────────────
+
+function startPolling() {
+  poll();
+  S.pollTimer = setInterval(poll, 2500);
+}
+
+async function poll() {
+  try {
+    const st = await api('GET', '/api/state');
+    if (st.version !== S.lastVersion) {
+      S.lastVersion = st.version;
+      S.serverState = st;
+      render(st);
+    }
+    // Always update timer display (it's time-based)
+    updateTimerDisplay(st);
+    updateVotingCountdown(st);
+    updateTimerBorder(st);
+  } catch (e) {
+    // Network blip — ignore
+  }
+}
+
+// ── Main render ───────────────────────────────────────────────────────────────
+
+function render(st) {
+  renderPhaseBadge(st);
+  renderQuestion(st);
+  renderGroups(st);
+  renderVoting(st);
+  renderParticipants(st);
+  if (S.isAdmin) {
+    renderAdminSettings(st);
+    renderAdminRoundControl(st);
+    renderAdminVotingControl(st);
+    renderAdminLateAlerts(st);
+  }
+}
+
+function renderPhaseBadge(st) {
+  const labels = {
+    registration: 'Registration',
+    group: st.settings.stageLabels.group_stage,
+    quarter_debate: st.settings.stageLabels.quarter_debate,
+    semi_final: st.settings.stageLabels.semi_final,
+    final: st.settings.stageLabels.final,
+    closed: 'Event Closed',
+  };
+  setText('#phase-badge', labels[st.phase] || st.phase);
+}
+
+function renderQuestion(st) {
+  if (st.currentQuestion) {
+    show('#question-display');
+    setText('#q-theme', st.currentQuestion.theme);
+    setText('#q-text', st.currentQuestion.text);
+  } else {
+    hide('#question-display');
+  }
+}
+
+// ── Timer display (runs every poll + every second via requestAnimationFrame) ──
+
+let _rafTimer = null;
+
+function updateTimerDisplay(st) {
+  const cs = st.currentSpeaker;
+  const clockEl = qs('#timer-clock');
+  const speakerEl = qs('#timer-speaker');
+  const pillEl = qs('#timer-pill');
+
+  if (!cs || cs.timerState === 'idle') {
+    setText(clockEl, '0:00');
+    setText(speakerEl, 'No speaker active');
+    pillEl.className = 'timer-status-pill pill-idle';
+    setText(pillEl, 'Idle');
+    return;
+  }
+
+  const elapsed = cs.timerState === 'running'
+    ? Date.now() - cs.startTime
+    : (cs.stoppedAt ? cs.stoppedAt - cs.startTime : 0);
+
+  setText(clockEl, formatTime(elapsed));
+  setText(speakerEl, cs.name || '—');
+
+  if (cs.timerState === 'running') {
+    pillEl.className = 'timer-status-pill pill-running';
+    setText(pillEl, 'Running');
+  } else {
+    pillEl.className = 'timer-status-pill pill-stopped';
+    setText(pillEl, 'Stopped');
+  }
+}
+
+function updateVotingCountdown(st) {
+  const el = qs('#voting-countdown');
+  if (!st.voting.active) { hide(el); return; }
+  const remaining = st.voting.windowSeconds - (Date.now() - st.voting.openedAt) / 1000;
+  if (remaining <= 0) { hide(el); return; }
+  show(el);
+  setText(el, `Voting closes in ${Math.ceil(remaining)}s`);
+}
+
+// ── Timer border / sweep ──────────────────────────────────────────────────────
+
+const sweepCanvas = qs('#sweep-canvas');
+const sweepCtx = sweepCanvas.getContext('2d');
+const timerBorderEl = qs('#timer-border');
+
+function updateTimerBorder(st) {
+  const cs = st.currentSpeaker;
+  timerBorderEl.className = '';
+
+  if (!cs || cs.timerState === 'idle' || !cs.startTime) {
+    clearSweep();
+    return;
+  }
+
+  const elapsedS = (Date.now() - cs.startTime) / 1000;
+  const sil = st.settings.silenceEnd;
+  const grn = st.settings.greenEnd;
+  const yel = st.settings.yellowEnd;
+  const red = st.settings.redEnd;
+
+  if (elapsedS < sil) {
+    clearSweep();
+    return;
+  }
+
+  if (elapsedS >= red) {
+    clearSweep();
+    timerBorderEl.classList.add('border-black');
+    return;
+  }
+
+  // Determine color and sweep fraction
+  let color, sweepStart, sweepEnd, fraction;
+
+  if (elapsedS < grn) {
+    color = '#2E7D32';
+    sweepStart = sil; sweepEnd = grn;
+  } else if (elapsedS < yel) {
+    color = '#F9A825';
+    sweepStart = grn; sweepEnd = yel;
+  } else {
+    color = '#BF0A30';
+    sweepStart = yel; sweepEnd = red;
+  }
+
+  fraction = Math.min(1, (elapsedS - sweepStart) / (sweepEnd - sweepStart));
+  drawSweep(color, fraction);
+}
+
+function clearSweep() {
+  sweepCtx.clearRect(0, 0, sweepCanvas.width, sweepCanvas.height);
+}
+
+function resizeSweepCanvas() {
+  sweepCanvas.width = window.innerWidth;
+  sweepCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeSweepCanvas);
+resizeSweepCanvas();
+
+function drawSweep(color, fraction) {
+  const w = sweepCanvas.width;
+  const h = sweepCanvas.height;
+  sweepCtx.clearRect(0, 0, w, h);
+
+  const bw = 6; // border width
+  // Perimeter: top, right, bottom, left
+  const perim = 2 * (w + h - 4 * bw);
+  const fillLen = fraction * perim;
+
+  sweepCtx.strokeStyle = color;
+  sweepCtx.lineWidth = bw;
+  sweepCtx.lineCap = 'square';
+  sweepCtx.beginPath();
+
+  // Start at top-left, go clockwise
+  // Segments: top → right → bottom → left
+  const segments = [
+    [[bw, bw / 2], [w - bw, bw / 2]],              // top
+    [[w - bw / 2, bw], [w - bw / 2, h - bw]],      // right
+    [[w - bw, h - bw / 2], [bw, h - bw / 2]],      // bottom
+    [[bw / 2, h - bw], [bw / 2, bw]],               // left
+  ];
+
+  let drawn = 0;
+  let started = false;
+
+  for (const [[x1, y1], [x2, y2]] of segments) {
+    const len = Math.hypot(x2 - x1, y2 - y1);
+    if (drawn >= fillLen) break;
+    const canDraw = Math.min(len, fillLen - drawn);
+    const t = canDraw / len;
+    const ex = x1 + (x2 - x1) * t;
+    const ey = y1 + (y2 - y1) * t;
+    if (!started) { sweepCtx.moveTo(x1, y1); started = true; }
+    sweepCtx.lineTo(ex, ey);
+    drawn += canDraw;
+  }
+
+  sweepCtx.stroke();
+}
+
+// RAF loop for smooth timer + sweep
+(function rafLoop() {
+  const st = S.serverState;
+  if (st) {
+    updateTimerDisplay(st);
+    updateVotingCountdown(st);
+    updateTimerBorder(st);
+  }
+  requestAnimationFrame(rafLoop);
+})();
+
+// ── Groups / Bracket ──────────────────────────────────────────────────────────
+
+function renderGroups(st) {
+  const body = qs('#bracket-body');
+  if (!st.groups || st.groups.length === 0) {
+    body.innerHTML = '<p class="muted">Registration in progress — bracket will appear after draw.</p>';
+    return;
+  }
+
+  let html = '';
+
+  // Group phase
+  html += `<p class="phase-badge">${st.settings.stageLabels.group_stage}</p>`;
+  st.groups.forEach((g, i) => {
+    const active = st.currentSpeaker && st.currentSpeaker.groupId === g.id;
+    html += `<div class="group-card ${g.status === 'done' ? 'done' : ''} ${active ? 'active' : ''}">
+      <div class="group-title">Group ${i + 1} <span style="font-weight:400;color:var(--gray)">(${g.status})</span></div>
+      <ul class="member-list">`;
+
+    const order = g.performanceOrder.length > 0 ? g.performanceOrder : g.members;
+    order.forEach(name => {
+      const isCurrent = st.currentSpeaker && st.currentSpeaker.name === name;
+      html += `<li class="member-chip ${isCurrent ? 'current' : ''}">${name}</li>`;
+    });
+    html += `</ul>`;
+    if (S.isAdmin && g.status === 'pending') {
+      html += `<div class="btn-row" style="margin-top:8px;">
+        <button class="btn btn-sm btn-outline" onclick="adminSpinWheel(${g.id})">🎡 Spin Order</button>
+        <button class="btn btn-sm btn-primary" onclick="adminSetActiveGroup(${g.id})">▶ Activate</button>
+      </div>`;
+    }
+    if (S.isAdmin && g.status !== 'done') {
+      html += `<div style="margin-top:6px;">
+        <input type="text" id="winner-${g.id}" placeholder="Winner name" style="width:140px;padding:5px 8px;font-size:0.82rem;border:1.5px solid #ccc;border-radius:5px;" />
+        <button class="btn btn-sm btn-green" onclick="adminCompleteGroup(${g.id})">✓ Complete</button>
+      </div>`;
+    }
+    html += `</div>`;
+  });
+
+  // Quarter teams
+  if (st.bracket.quarter_teams && st.bracket.quarter_teams.length > 0) {
+    html += `<p class="phase-badge" style="margin-top:12px;">${st.settings.stageLabels.quarter_debate}</p>`;
+    st.bracket.quarter_teams.forEach((team, i) => {
+      html += `<div class="group-card">
+        <div class="group-title">Match ${i + 1}</div>
+        <ul class="member-list">${team.map(n => `<li class="member-chip">${n}</li>`).join('')}</ul>
+      </div>`;
+    });
+  }
+
+  // Semi / Final bracket slots
+  if (st.bracket.semi_winners && st.bracket.semi_winners.length > 0) {
+    html += `<p class="phase-badge" style="margin-top:12px;">${st.settings.stageLabels.semi_final}</p>`;
+    html += '<div class="bracket-grid">';
+    st.bracket.semi_winners.forEach(w => {
+      html += `<div class="bracket-slot winner"><div class="slot-label">Finalist</div><div class="slot-name">${w}</div></div>`;
+    });
+    html += '</div>';
+  }
+
+  if (st.bracket.finalist) {
+    html += `<p class="phase-badge" style="margin-top:12px;background:var(--gold-dark);">${st.settings.stageLabels.final} 🏆</p>`;
+    html += `<div class="bracket-slot winner" style="margin-top:8px;"><div class="slot-label">Champion</div><div class="slot-name">${st.bracket.finalist}</div></div>`;
+  }
+
+  body.innerHTML = html;
+}
+
+// ── Voting ────────────────────────────────────────────────────────────────────
+
+function renderVoting(st) {
+  const card = qs('#voting-card');
+  const v = st.voting;
+
+  if (!v.active && !v.results) { hide(card); return; }
+  show(card);
+
+  const buttonsWrap = qs('#vote-buttons-wrap');
+  const progressWrap = qs('#vote-progress-wrap');
+  const resultsDiv = qs('#results-chart');
+
+  if (v.active) {
+    hide(resultsDiv);
+
+    // Progress
+    const totalVotes = Object.keys(v.votes).length;
+    const eligible = v.eligibleVoters.length;
+    const pct = eligible > 0 ? (totalVotes / eligible) * 100 : 0;
+    show(progressWrap);
+    qs('#vote-progress-bar').style.width = pct + '%';
+    setText('#vote-progress-label', `${totalVotes} / ${eligible} votes cast`);
+
+    // Vote buttons (for eligible voters)
+    const isEligible = v.eligibleVoters.includes(S.name);
+    const myVote = v.votes[S.name];
+
+    if (isEligible) {
+      let html = '<div class="vote-candidate-grid">';
+      (v.candidates || []).forEach(c => {
+        html += `<button class="vote-candidate-btn ${myVote === c ? 'selected' : ''}" onclick="castVote('${c}')">${c}</button>`;
+      });
+      html += '</div>';
+      buttonsWrap.innerHTML = html;
+    } else {
+      buttonsWrap.innerHTML = '<p class="muted">You are not eligible to vote in this round.</p>';
+    }
+  } else if (v.results) {
+    hide(progressWrap);
+    buttonsWrap.innerHTML = '';
+    show(resultsDiv);
+
+    const entries = Object.entries(v.results).sort((a, b) => b[1] - a[1]);
+    const max = entries[0]?.[1] || 1;
+    const winners = entries.filter(([, c]) => c === max).map(([n]) => n);
+
+    let html = '';
+    entries.forEach(([name, count]) => {
+      const pct = max > 0 ? (count / max) * 100 : 0;
+      const isWinner = winners.includes(name);
+      html += `<div class="result-row ${isWinner ? 'winner' : ''}">
+        <div class="result-row-label"><span>${name}${isWinner ? ' 🏅' : ''}</span><span class="count">${count} vote${count !== 1 ? 's' : ''}</span></div>
+        <div class="result-bar-outer"><div class="result-bar-inner" style="width:${pct}%"></div></div>
+      </div>`;
+    });
+
+    // Tiebreak
+    if (winners.length > 1 && S.isAdmin && !v.tiebreakAdminVoteUsed) {
+      html += `<hr class="divider"/><p class="muted">Tie detected. Use tiebreak:</p>
+      <div class="btn-row" id="tiebreak-btns">
+        ${winners.map(w => `<button class="btn btn-sm btn-outline" onclick="adminTiebreak('${w}')">${w}</button>`).join('')}
+      </div>`;
+    }
+
+    resultsDiv.innerHTML = html;
+  }
+}
+
+async function castVote(candidateName) {
+  try {
+    await api('POST', '/api/vote', { voterName: S.name, candidateName });
+    // Force poll
+    const st = await api('GET', '/api/state');
+    S.serverState = st;
+    S.lastVersion = st.version;
+    render(st);
+  } catch (e) { alert(e.message); }
+}
+
+// ── Participants ──────────────────────────────────────────────────────────────
+
+function renderParticipants(st) {
+  setText('#participants-count', st.participants.length);
+  const list = qs('#participants-list');
+  if (!st.participants.length) { list.innerHTML = '<p class="muted">No participants yet.</p>'; return; }
+
+  list.innerHTML = st.participants.map(p => {
+    const badge = p.isAdmin
+      ? `<span class="participant-role-badge badge-admin">Admin</span>`
+      : p.role === 'competitor'
+        ? `<span class="participant-role-badge badge-competitor">Competitor</span>`
+        : `<span class="participant-role-badge badge-observer">Observer</span>`;
+    const groupLabel = p.groupIndex != null ? ` · Group ${p.groupIndex + 1}` : '';
+    return `<div class="participant-row">${badge}<span>${p.name}${groupLabel}</span></div>`;
+  }).join('');
+}
+
+// ── Admin settings ────────────────────────────────────────────────────────────
+
+function renderAdminSettings(st) {
+  const s = st.settings;
+  const fields = ['silenceEnd', 'greenEnd', 'yellowEnd', 'redEnd', 'votingWindowSeconds', 'numGroups', 'maxPerGroup', 'breakMinutes'];
+  fields.forEach(f => {
+    const el = qs(`#set-${f}`);
+    if (el && s[f] != null) el.value = s[f];
+  });
+  ['group_stage', 'quarter_debate', 'semi_final', 'final'].forEach(k => {
+    const el = qs(`#set-label-${k}`);
+    if (el && s.stageLabels[k]) el.value = s.stageLabels[k];
+  });
+}
+
+qs('#admin-save-settings').addEventListener('click', async () => {
+  const body = {};
+  ['silenceEnd', 'greenEnd', 'yellowEnd', 'redEnd', 'votingWindowSeconds', 'numGroups', 'breakMinutes'].forEach(f => {
+    const v = qs(`#set-${f}`).value;
+    if (v !== '') body[f] = Number(v);
+  });
+  const maxPerGroup = qs('#set-maxPerGroup').value;
+  if (maxPerGroup !== '') body.maxPerGroup = Number(maxPerGroup);
+  body.stageLabels = {};
+  ['group_stage', 'quarter_debate', 'semi_final', 'final'].forEach(k => {
+    body.stageLabels[k] = qs(`#set-label-${k}`).value;
+  });
+  try {
+    await api('POST', '/api/admin/settings', body);
+    alert('Settings saved.');
+  } catch (e) { alert(e.message); }
+});
+
+// ── Admin draw ────────────────────────────────────────────────────────────────
+
+qs('#admin-lock-draw').addEventListener('click', async () => {
+  if (!confirm('Lock registration and generate draw?')) return;
+  try {
+    const res = await api('POST', '/api/admin/lock-draw', {});
+    setText('#admin-draw-info', `Draw locked. ${res.groups.length} groups created.`);
+  } catch (e) { alert(e.message); }
+});
+
+function renderAdminLateAlerts(st) {
+  if (st.phase === 'registration') { qs('#admin-late-alerts').innerHTML = ''; return; }
+  const lateArrivals = st.participants.filter(p =>
+    p.role === 'observer' && !p.groupIndex && st.phase === 'group' &&
+    st.groups.some(g => g.status === 'pending')
+  );
+  // Only show newly-joined (after draw locked, no group)
+  const alerts = qs('#admin-late-alerts');
+  const pendingGroups = st.groups.filter(g => g.status === 'pending');
+  if (lateArrivals.length === 0 || pendingGroups.length === 0) { alerts.innerHTML = ''; return; }
+
+  alerts.innerHTML = lateArrivals.map(p => {
+    const opts = pendingGroups.map((g, i) => `<option value="${g.id}">Group ${g.id + 1}</option>`).join('');
+    return `<div class="late-alert">
+      <span>⚠ Late arrival: <strong>${p.name}</strong></span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <select id="late-group-${p.name}" style="padding:4px 6px;font-size:0.8rem;">${opts}</select>
+        <button class="btn btn-sm btn-gold" onclick="adminAssignLate('${p.name}')">Assign</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function adminAssignLate(name) {
+  const sel = qs(`#late-group-${name}`);
+  const groupIndex = parseInt(sel.value);
+  try {
+    await api('POST', '/api/admin/assign-late', { name, groupIndex });
+  } catch (e) { alert(e.message); }
+}
+
+// ── Admin round control ───────────────────────────────────────────────────────
+
+function renderAdminRoundControl(st) {
+  const body = qs('#admin-round-body');
+  if (!st.groups || st.groups.length === 0) {
+    body.innerHTML = '<p class="muted">Draw must be locked to control rounds.</p>';
+    return;
+  }
+
+  const cs = st.currentSpeaker;
+  const activeGroup = st.groups.find(g => g.status === 'active');
+  const candidates = activeGroup ? activeGroup.members : [];
+  const speakerQueue = activeGroup ? (activeGroup.performanceOrder.length > 0 ? activeGroup.performanceOrder : activeGroup.members) : [];
+
+  let html = '';
+
+  // Question draw
+  html += `<button class="btn btn-primary" onclick="adminDrawQuestion()">🎲 Draw Question</button>`;
+
+  // Timer controls
+  html += `<hr class="divider" /><div><strong>Timer</strong></div>`;
+  html += `<div class="btn-row">
+    <button class="btn btn-green btn-sm" onclick="adminTimer('start')">▶ Start</button>
+    <button class="btn btn-outline btn-sm" onclick="adminTimer('stop')">⏸ Stop</button>
+    <button class="btn btn-outline btn-sm" onclick="adminTimer('restart')">↺ Restart</button>
+  </div>`;
+
+  // Speaker selection
+  if (speakerQueue.length > 0) {
+    html += `<div style="margin-top:10px;"><strong>Set Speaker</strong></div>
+    <div class="btn-row">
+      ${speakerQueue.map(n => `<button class="btn btn-sm btn-outline" onclick="adminSetSpeaker('${n}', ${activeGroup?.id ?? 0})">${n}</button>`).join('')}
+    </div>`;
+  }
+
+  html += `<hr class="divider" />
+    <div class="btn-row">
+      <button class="btn btn-sm btn-outline" onclick="adminAdvance('next-speaker')">Next Speaker</button>
+    </div>`;
+
+  body.innerHTML = html;
+}
+
+async function adminDrawQuestion() {
+  try {
+    const res = await api('POST', '/api/admin/draw-question', {});
+    // Question will appear in next poll
+  } catch (e) { alert(e.message); }
+}
+
+async function adminTimer(action) {
+  const cs = S.serverState?.currentSpeaker;
+  try {
+    await api('POST', '/api/admin/timer', { action, speakerName: cs?.name, groupId: cs?.groupId });
+  } catch (e) { alert(e.message); }
+}
+
+async function adminSetSpeaker(name, groupId) {
+  try {
+    await api('POST', '/api/admin/timer', { action: 'set-speaker', speakerName: name, groupId });
+  } catch (e) { alert(e.message); }
+}
+
+async function adminSetActiveGroup(groupId) {
+  try {
+    const st = S.serverState;
+    const group = st.groups.find(g => g.id === groupId);
+    if (group) group.status = 'active';
+    await api('POST', '/api/admin/timer', { action: 'set-speaker', speakerName: null, groupId });
+  } catch (e) { alert(e.message); }
+}
+
+async function adminSpinWheel(groupId) {
+  const overlay = qs('#wheel-overlay');
+  const namesEl = qs('#wheel-names');
+  const resultEl = qs('#wheel-result');
+  show(overlay);
+  namesEl.textContent = '…';
+  namesEl.className = '';
+  resultEl.textContent = '';
+
+  try {
+    const res = await api('POST', '/api/admin/spin-wheel', { groupId });
+    const order = res.performanceOrder;
+
+    // Animate: cycle through names rapidly then slow
+    let i = 0;
+    let delay = 60;
+    namesEl.classList.add('spinning');
+
+    function step() {
+      namesEl.textContent = order[i % order.length];
+      i++;
+      delay = Math.min(delay * 1.08, 400);
+      if (delay < 380) {
+        setTimeout(step, delay);
+      } else {
+        namesEl.classList.remove('spinning');
+        namesEl.textContent = order[0];
+        resultEl.innerHTML = `<strong>Order:</strong> ${order.join(' → ')}`;
+      }
+    }
+    step();
+  } catch (e) {
+    hide(overlay);
+    alert(e.message);
+  }
+}
+
+qs('#wheel-close-btn').addEventListener('click', () => hide('#wheel-overlay'));
+
+async function adminCompleteGroup(groupId) {
+  const winnerEl = qs(`#winner-${groupId}`);
+  const winner = winnerEl ? winnerEl.value.trim() : '';
+  try {
+    await api('POST', '/api/admin/advance', { action: 'complete-group', data: { groupId, winner } });
+  } catch (e) { alert(e.message); }
+}
+
+async function adminAdvance(action, data) {
+  try {
+    await api('POST', '/api/admin/advance', { action, data });
+  } catch (e) { alert(e.message); }
+}
+
+// ── Admin voting control ──────────────────────────────────────────────────────
+
+function renderAdminVotingControl(st) {
+  const body = qs('#admin-voting-body');
+  const activeGroup = st.groups?.find(g => g.status === 'active');
+
+  if (!activeGroup && st.phase === 'group') {
+    body.innerHTML = '<p class="muted">No active group.</p>';
+    return;
+  }
+
+  const candidates = activeGroup ? activeGroup.members : [];
+  const v = st.voting;
+
+  let html = '';
+
+  if (!v.active && !v.results) {
+    html += `<button class="btn btn-gold" onclick="adminOpenVoting(${JSON.stringify(candidates)})">Open Voting</button>`;
+  } else if (v.active) {
+    html += `<p class="muted">Voting open — ${Object.keys(v.votes).length} / ${v.eligibleVoters.length} votes cast.</p>`;
+    html += `<button class="btn btn-danger btn-sm mt8" onclick="adminCloseVoting()">Close Voting &amp; Reveal Results</button>`;
+  } else if (v.results) {
+    html += `<p class="muted">Voting closed. Results shown.</p>`;
+    html += `<button class="btn btn-outline btn-sm mt8" onclick="adminOpenVoting(${JSON.stringify(candidates)})">Reopen Voting</button>`;
+  }
+
+  body.innerHTML = html;
+}
+
+async function adminOpenVoting(candidates) {
+  try {
+    const ws = parseInt(qs('#set-votingWindowSeconds')?.value || '60');
+    await api('POST', '/api/admin/open-voting', { candidates, windowSeconds: ws });
+  } catch (e) { alert(e.message); }
+}
+
+async function adminCloseVoting() {
+  try {
+    await api('POST', '/api/admin/close-voting', {});
+  } catch (e) { alert(e.message); }
+}
+
+async function adminTiebreak(candidateName) {
+  if (!confirm(`Cast decisive vote for ${candidateName}?`)) return;
+  try {
+    await api('POST', '/api/admin/tiebreak-vote', { adminName: S.name, candidateName });
+  } catch (e) { alert(e.message); }
+}
+
+// ── Phase advance buttons ─────────────────────────────────────────────────────
+
+qs('#admin-start-quarter').addEventListener('click', async () => {
+  if (!confirm('Advance to Quarter-Debate? This will randomly assign teams.')) return;
+  await adminAdvance('start-quarter');
+});
+qs('#admin-start-semi').addEventListener('click', async () => {
+  if (!confirm('Advance to Semifinal?')) return;
+  await adminAdvance('start-semi');
+});
+qs('#admin-start-final').addEventListener('click', async () => {
+  if (!confirm('Advance to Final?')) return;
+  await adminAdvance('start-final');
+});
+qs('#admin-close').addEventListener('click', async () => {
+  if (!confirm('Close the event?')) return;
+  await adminAdvance('close');
+});
+qs('#admin-reset').addEventListener('click', async () => {
+  if (!confirm('RESET everything? All state will be lost.')) return;
+  await adminAdvance('reset');
+  location.reload();
+});
+</script>
+</body>
+</html>

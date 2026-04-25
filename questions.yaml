@@ -1,0 +1,44 @@
+group_stage:
+  theme: "Unexpected Situations"
+  questions:
+    - "You arrive at work to find your desk replaced by a ball pit. What do you do?"
+    - "Your GPS suddenly speaks only in riddles. How do you navigate home?"
+    - "You wake up with the ability to speak to animals, but they only want to complain. How do you handle your day?"
+    - "You're presenting to the board when your PowerPoint turns into a slideshow of your childhood photos. How do you recover?"
+    - "You discover your morning coffee has been replaced with a truth serum. What happens next?"
+    - "Your phone autocorrects every message you send to a haiku. How do you communicate for the rest of the day?"
+    - "You're named emergency mayor of your town for 24 hours. What's your first act?"
+    - "You open your fridge to find it's now a portal to another dimension. What do you do?"
+    - "You receive an email confirming you've been elected president of a country you've never heard of. How do you respond?"
+    - "Your shadow has started disagreeing with your decisions. How do you negotiate with it?"
+
+quarter_debate:
+  theme: "Leadership Dilemmas"
+  questions:
+    - "Your team unanimously wants to pursue a plan you know will fail. How do you lead?"
+    - "You discover your most productive employee has been lying on their resume. What do you do?"
+    - "You must choose between promoting your most loyal team member or the most skilled outsider. Which do you choose and why?"
+    - "Your company must cut 20% of staff. How do you decide who stays and who goes?"
+    - "A whistleblower on your team reveals a problem you were about to quietly fix yourself. How do you respond?"
+    - "You're offered a promotion that requires relocating your entire team to a new country. How do you handle this?"
+    - "Your mentor gives you advice that contradicts everything you've learned from experience. What do you do?"
+    - "You realize mid-project that the entire strategy is wrong, but the team is energized and on track. Do you speak up?"
+
+semi_final:
+  theme: "Impossible Choices"
+  questions:
+    - "You can end world hunger but everyone must give up their favorite food forever. Do you flip the switch?"
+    - "You can give every person on Earth one extra hour per day, but you must give up two hours of your own. Do you accept?"
+    - "You're offered the ability to read minds, but you can never turn it off. Do you take it?"
+    - "You can fix climate change permanently, but humans must live without the internet for ten years. Do you agree?"
+    - "You can make one law that the entire world must follow for the next century. What is it and why?"
+    - "You can live to 200 years old but must spend every third year in complete isolation. Do you accept?"
+
+final:
+  theme: "The Human Condition"
+  questions:
+    - "If you could bottle one emotion and share it with the world, what would it be and why?"
+    - "What is the one thing humanity must learn in the next ten years to survive?"
+    - "If failure were impossible, what would you attempt tomorrow?"
+    - "What does it mean to truly lead — and have you ever done it?"
+    - "If you could rewrite one rule of society from scratch, which would it be and what would replace it?"
