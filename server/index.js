@@ -272,7 +272,6 @@ app.post('/api/admin/lock-draw', (req, res) => {
   });
 
   st.groups = groups;
-  st.spinState = null;
   st.speakerLog = [];
   st.phase = 'group';
   bump();
@@ -300,29 +299,6 @@ app.post('/api/admin/assign-late', (req, res) => {
   if (!group.members.includes(name)) group.members.push(name);
   bump();
   res.json({ ok: true });
-});
-
-// ── Admin: Spin wheel (set performance order) ─────────────────────────────────
-
-app.post('/api/admin/spin-wheel', (req, res) => {
-  if (!checkAdmin(req, res)) return;
-  const { groupId } = req.body;
-  const st = getState();
-
-  const group = st.groups.find((g) => g.id === groupId);
-  if (!group) return res.status(404).json({ error: 'Group not found' });
-
-  const shuffled = [...group.members].sort(() => Math.random() - 0.5);
-  group.performanceOrder = shuffled;
-  st.spinState = {
-    groupId,
-    names: shuffled,
-    startedAt: Date.now(),
-    durationMs: 2200,
-    winner: shuffled[0] || null,
-  };
-  bump();
-  res.json({ ok: true, performanceOrder: shuffled });
 });
 
 // ── Admin: Draw question ──────────────────────────────────────────────────────
@@ -366,7 +342,6 @@ app.post('/api/admin/timer', (req, res) => {
       st.currentSpeaker.disqualified = false;
       st.currentSpeaker.timerState = 'running';
     }
-    st.spinState = null;
   } else if (action === 'stop') {
     if (st.currentSpeaker && st.currentSpeaker.timerState === 'running') {
       const stoppedAt = Date.now();
@@ -414,10 +389,8 @@ app.post('/api/admin/timer', (req, res) => {
       st.currentSpeaker.disqualified = false;
       st.currentSpeaker.timerState = 'running';
     }
-    st.spinState = null;
   } else if (action === 'set-speaker') {
     st.currentSpeaker = { name: speakerName, groupId, startTime: null, stoppedAt: null, disqualified: false, timerState: 'idle' };
-    st.spinState = null;
     if (st.phase === 'group' && typeof groupId === 'number') {
       st.groups.forEach((g) => {
         if (g.status === 'active' && g.id !== groupId) g.status = 'pending';
@@ -656,7 +629,14 @@ app.post('/api/admin/advance', (req, res) => {
     }
     st.currentSpeaker = null;
     st.currentQuestion = null;
-    st.spinState = null;
+    bump();
+
+  } else if (action === 'set-group-winner') {
+    const { groupId, winner } = data || {};
+    if (!winner || !winner.trim()) { res.status(400).json({ error: 'Winner name required' }); return; }
+    const result = st.bracket.group_results.find((r) => r.groupId === groupId);
+    if (!result) { res.status(400).json({ error: 'Group not completed yet' }); return; }
+    result.winner = winner.trim();
     bump();
 
   } else if (action === 'complete-group') {
@@ -664,9 +644,13 @@ app.post('/api/admin/advance', (req, res) => {
     const group = st.groups.find((g) => g.id === groupId);
     if (!group) { res.status(400).json({ error: 'Group not found' }); return; }
 
-    // Auto-detect winner + runner_up from voting results
+    // Require explicit winner
     const { winner: vWinner, loser: vRunnerUp, loser_votes: vRunnerVotes } = votingTop2(st);
-    const winner = (data && data.winner) || vWinner;
+    const winner = (data && data.winner && data.winner.trim()) ? data.winner.trim() : vWinner;
+    if (!winner) {
+      res.status(400).json({ error: 'A winner must be selected before completing the group.' });
+      return;
+    }
     const runner_up = vRunnerUp;
     const runner_up_votes = vRunnerVotes;
 
@@ -682,7 +666,6 @@ app.post('/api/admin/advance', (req, res) => {
     });
     st.currentSpeaker = null;
     st.currentQuestion = null;
-    st.spinState = null;
     bump();
 
   } else if (action === 'start-quarter') {
@@ -696,13 +679,17 @@ app.post('/api/admin/advance', (req, res) => {
     const needed = Math.max(0, 8 - winners.length);
     const advancingRunners = runnersUp.slice(0, needed).map((r) => r.name);
     const advancing = [...new Set([...winners, ...advancingRunners])].slice(0, 8);
-
-    const shuffled = [...advancing].sort(() => Math.random() - 0.5);
     st.bracket.advancing = advancing;
-    st.bracket.quarter_groups = [shuffled.slice(0, 4), shuffled.slice(4)];
+
+    // Accept custom group arrangement from admin preview
+    if (data && Array.isArray(data.customGroups) && data.customGroups.length === 2) {
+      st.bracket.quarter_groups = [data.customGroups[0], data.customGroups[1]];
+    } else {
+      const shuffled = [...advancing].sort(() => Math.random() - 0.5);
+      st.bracket.quarter_groups = [shuffled.slice(0, 4), shuffled.slice(4)];
+    }
     st.bracket.quarter_spoken = [];
     st.bracket.quarter_winner_idx = null;
-    st.spinState = null;
     st.phase = 'quarter_debate';
     bump();
 
@@ -717,7 +704,6 @@ app.post('/api/admin/advance', (req, res) => {
     st.bracket.quarter_winner_idx = winnerIdx ?? 0;
     st.currentSpeaker = null;
     st.currentQuestion = null;
-    st.spinState = null;
     bump();
 
   } else if (action === 'start-semi') {
@@ -730,7 +716,6 @@ app.post('/api/admin/advance', (req, res) => {
     st.bracket.semi_results = [];
     st.bracket.finalists = [];
     st.bracket.third_place_candidates = [];
-    st.spinState = null;
     st.phase = 'semi_final';
     bump();
 
@@ -747,11 +732,9 @@ app.post('/api/admin/advance', (req, res) => {
 
     st.currentSpeaker = null;
     st.currentQuestion = null;
-    st.spinState = null;
     bump();
 
   } else if (action === 'start-final') {
-    st.spinState = null;
     st.phase = 'final';
     bump();
 
@@ -763,7 +746,6 @@ app.post('/api/admin/advance', (req, res) => {
     st.bracket.final_result = { winner: finalWinner, loser: finalLoser };
     st.currentSpeaker = null;
     st.currentQuestion = null;
-    st.spinState = null;
     bump();
 
   } else if (action === 'reveal-podium') {
@@ -798,11 +780,9 @@ app.post('/api/admin/advance', (req, res) => {
     st.bracket.third_place = third;
     // Only close if 3rd place is resolved
     if (third || (data && data.thirdPlace !== undefined)) st.phase = 'closed';
-    st.spinState = null;
     bump();
 
   } else if (action === 'close') {
-    st.spinState = null;
     st.phase = 'closed';
     bump();
 

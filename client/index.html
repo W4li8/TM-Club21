@@ -670,65 +670,78 @@ input:focus, select:focus {
   margin-bottom: 8px;
 }
 
-/* ── Wheel animation ─────────────────────────────────────────── */
-#wheel-overlay {
+/* ── Vote list items ─────────────────────────────────────────── */
+.vote-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid var(--gray-light);
+  border-radius: 8px;
+  background: var(--white);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--navy);
+  text-align: left;
+  margin-bottom: 6px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.vote-list-item:hover { border-color: var(--navy-light); background: var(--offwhite); }
+.vote-list-item.selected { border-color: var(--gold); background: #fffbe6; }
+.vote-list-item.selected::before { content: '✓  '; color: var(--gold-dark); font-weight: 800; }
+
+/* ── Quarter preview drag-drop ───────────────────────────────── */
+#quarter-preview-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.55);
+  background: rgba(0,0,0,0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 500;
+  z-index: 400;
 }
-#wheel-overlay.hidden { display: none; }
+#quarter-preview-overlay.hidden { display: none; }
 
-.wheel-box {
+.quarter-preview-box {
   background: var(--white);
-  border-radius: 16px;
-  padding: 30px 24px;
-  max-width: 340px;
-  width: 90%;
-  text-align: center;
+  border-radius: 14px;
+  padding: 24px;
+  max-width: 520px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 8px 40px rgba(0,0,0,0.4);
 }
-.wheel-box h3 { color: var(--navy); margin-bottom: 16px; }
+.quarter-preview-box h3 { color: var(--navy); margin-bottom: 4px; font-size: 1.05rem; }
 
-#wheel-names {
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: var(--navy);
-  min-height: 132px;
+.quarter-drop-zone {
+  border: 2px dashed var(--gray-light);
+  border-radius: 8px;
+  padding: 10px;
+  min-height: 80px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.quarter-drop-zone.drag-over { border-color: var(--gold); background: #fffbe6; }
+.quarter-drop-zone.group-a { border-color: rgba(0,129,200,0.4); }
+.quarter-drop-zone.group-b { border-color: rgba(238,51,78,0.4); }
+
+.quarter-chip {
   display: flex;
-  align-items: stretch;
-  justify-content: center;
-  flex-direction: column;
-  gap: 4px;
-  overflow: hidden;
-}
-#wheel-names.spinning { color: var(--gold); }
-
-.wheel-row {
-  opacity: 0.4;
-  transform: scale(0.92);
-  transition: transform 0.08s linear, opacity 0.08s linear;
-}
-
-.wheel-row.center {
-  opacity: 1;
-  transform: scale(1);
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--gray-light);
+  border-radius: 6px;
+  margin-bottom: 5px;
+  cursor: grab;
+  font-size: 0.85rem;
+  font-weight: 600;
   color: var(--navy);
+  user-select: none;
 }
-
-.wheel-row.me {
-  color: #003a8c;
-  font-weight: 900;
-}
-
-.wheel-row.center.me {
-  color: var(--gold-dark);
-}
-
-.wheel-result { margin-top: 14px; font-size: 0.85rem; color: var(--gray); }
+.quarter-chip:active { cursor: grabbing; }
+.quarter-chip.dragging { opacity: 0.35; }
 
 /* ── Participant list ────────────────────────────────────────── */
 .participant-row {
@@ -756,66 +769,7 @@ input:focus, select:focus {
 .badge-observer   { background: var(--gray-light); color: var(--gray); }
 .badge-admin      { background: var(--gold); color: var(--navy); }
 
-/* ── Voting timer ────────────────────────────────────────────── */
-.voting-countdown { font-size: 0.82rem; color: var(--gray); margin-bottom: 6px; }
-
-#vote-popup-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 580;
-}
-
-#vote-popup-overlay.hidden { display: none; }
-
-.vote-popup-box {
-  background: var(--white);
-  border-radius: 14px;
-  width: min(92vw, 380px);
-  padding: 18px;
-  box-shadow: 0 10px 38px rgba(0, 0, 0, 0.35);
-}
-
-.vote-popup-title {
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: var(--navy);
-  margin-bottom: 4px;
-}
-
-.vote-popup-sub {
-  font-size: 0.82rem;
-  color: var(--gray);
-  margin-bottom: 10px;
-}
-
-.vote-popup-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-}
-
-.vote-popup-choice {
-  width: 100%;
-  border: 2px solid var(--gray-light);
-  background: var(--white);
-  color: var(--navy);
-  border-radius: 8px;
-  font-size: 0.92rem;
-  font-weight: 700;
-  padding: 10px 12px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.vote-popup-choice.selected {
-  border-color: var(--gold-dark);
-  background: #fffbe6;
-}
-
+/* ── Speaker log ──────────────────────────────────────────────── */
 .speaker-log-list {
   display: flex;
   flex-direction: column;
@@ -1156,12 +1110,16 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
       </div>
     </div>
   </div>
-  <div id="admin-under-timer-mount"></div>
 
-  <!-- Voting card -->
-  <div class="card hidden" id="voting-card">
-    <h2>Voting</h2>
-    <div class="voting-countdown hidden" id="voting-countdown"></div>
+  <!-- Voting card (right below timer, visible to all when active) -->
+  <div class="card hidden" id="voting-card" style="margin-top:12px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <h2 style="margin-bottom:0;">🗳 Voting</h2>
+      <div id="vote-countdown-display" class="hidden" style="text-align:right;">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--navy);line-height:1;" id="vote-time-remaining">—</div>
+        <div style="font-size:0.68rem;color:var(--gray);">sec remaining</div>
+      </div>
+    </div>
     <div class="vote-progress hidden" id="vote-progress-wrap">
       <div class="progress-bar-outer">
         <div class="progress-bar-inner" id="vote-progress-bar" style="width:0%"></div>
@@ -1169,8 +1127,9 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
       <div class="progress-label" id="vote-progress-label">0 / 0 votes cast</div>
     </div>
     <div id="vote-buttons-wrap"></div>
-    <div class="results-chart hidden" id="results-chart"></div>
   </div>
+
+  <div id="admin-under-timer-mount"></div>
 
   <!-- Groups / Bracket -->
   <div class="card" id="bracket-card">
@@ -1326,25 +1285,24 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
   </div>
 </div>
 
-<!-- Wheel overlay -->
-<div id="wheel-overlay" class="hidden">
-  <div class="wheel-box">
-    <h3>🎡 Spinning for order…</h3>
-    <div id="wheel-names">—</div>
-    <div class="wheel-result" id="wheel-result"></div>
-    <button class="btn btn-primary mt8" id="wheel-close-btn">Done</button>
-  </div>
-</div>
-
-<div id="vote-popup-overlay" class="hidden">
-  <div class="vote-popup-box">
-    <div class="vote-popup-title">Voting is open</div>
-    <div class="vote-popup-sub" id="vote-popup-sub">Select one speaker before time runs out.</div>
-    <div class="vote-popup-grid" id="vote-popup-grid"></div>
+<!-- Quarter groups preview / drag-drop editor -->
+<div id="quarter-preview-overlay" class="hidden">
+  <div class="quarter-preview-box">
+    <h3>Quarter-Debate Groups</h3>
+    <p class="muted" style="margin-bottom:14px;font-size:0.82rem;">Drag names between groups to balance matchups, then confirm.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" id="quarter-preview-groups"></div>
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn btn-outline btn-sm" onclick="cancelQuarterPreview()">Cancel</button>
+      <button class="btn btn-gold" onclick="confirmQuarterPreview()">Confirm &amp; Start Quarter-Debate</button>
+    </div>
   </div>
 </div>
 
 <script>
+// ── Helpers ───────────────────────────────────────────────────────────────────
+// Encode single quotes so JSON.stringify output is safe inside onclick='...' attrs
+function safeJson(val) { return JSON.stringify(val).replace(/'/g, '&#39;'); }
+
 // ── State ─────────────────────────────────────────────────────────────────────
 const S = {
   name: '',
@@ -1356,8 +1314,7 @@ const S = {
   lastVersion: -1,
   pollTimer: null,
   phases: {},
-  dismissedSpinKey: null,
-  activeSpinKey: null,
+  settingsInitialized: false,
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -1510,14 +1467,11 @@ function startPolling() {
 async function poll() {
   try {
     const st = await api('GET', '/api/state');
+    S.serverState = st;
     if (st.version !== S.lastVersion) {
       S.lastVersion = st.version;
-      S.serverState = st;
       render(st);
     }
-    updateTimerDisplay(st);
-    updateVotingCountdown(st);
-    updateTimerBorder(st);
   } catch (_) {}
 }
 
@@ -1539,10 +1493,11 @@ function render(st) {
   renderVoting(st);
   renderParticipants(st);
   renderOptOut(st);
-  syncSpinOverlay(st);
-  syncVotingPopup(st);
   if (S.isAdmin) {
-    renderAdminSettings(st);
+    if (!S.settingsInitialized) {
+      renderAdminSettings(st);
+      S.settingsInitialized = true;
+    }
     renderAdminRoundControl(st);
     renderAdminVotingControl(st);
     renderAdminLateAlerts(st);
@@ -1743,18 +1698,11 @@ function updateTimerDisplay(st) {
   const dqOverlay = qs('#dq-overlay');
   const dqOverrideBtn = qs('#dq-override-btn');
 
-  const spin = st.spinState;
-  const spinEnded = !!(spin && Date.now() - spin.startedAt >= spin.durationMs);
-  const headerName = (cs && cs.name) || (spinEnded ? spin.winner : null) || '—';
-  setText(currentNameEl, headerName);
+  setText(currentNameEl, (cs && cs.name) || '—');
 
   if (!cs || cs.timerState === 'idle') {
     setText(clockEl, '0:00');
-    if (spinEnded && spin.winner) {
-      setText(speakerEl, `Next up: ${spin.winner}`);
-    } else {
-      setText(speakerEl, 'No speaker active');
-    }
+    setText(speakerEl, 'No speaker active');
     pillEl.className = 'timer-status-pill pill-idle';
     setText(pillEl, 'Idle');
     hide(dqOverlay);
@@ -1775,29 +1723,31 @@ function updateTimerDisplay(st) {
   } else {
     pillEl.className = 'timer-status-pill pill-stopped';
     setText(pillEl, 'Stopped');
-
-    if (cs.disqualified) {
-      show(dqOverlay);
-      setText('#dq-time', formatTime(elapsed));
-      if (S.isAdmin) {
-        show(dqOverrideBtn);
-        dqOverrideBtn.onclick = () => adminOverrideDQ(cs.name);
-      } else {
-        hide(dqOverrideBtn);
-      }
-    } else {
-      hide(dqOverlay);
-    }
+    hide(dqOverlay);
   }
 }
 
 function updateVotingCountdown(st) {
-  const el = qs('#voting-countdown');
-  if (!st.voting.active) { hide(el); return; }
-  const remaining = st.voting.windowSeconds - (Date.now() - st.voting.openedAt) / 1000;
-  if (remaining <= 0) { hide(el); return; }
-  show(el);
-  setText(el, `Voting closes in ${Math.ceil(remaining)}s`);
+  const v = st.voting;
+  const countdownEl = qs('#vote-countdown-display');
+  const remainingEl = qs('#vote-time-remaining');
+  if (!v.active) {
+    _votingAutoCloseKey = null;
+    if (countdownEl) hide(countdownEl);
+    return;
+  }
+  const remaining = v.windowSeconds - (Date.now() - v.openedAt) / 1000;
+  if (remaining <= 0) {
+    if (remainingEl) setText(remainingEl, '0');
+    // Auto-close voting for admin when window expires
+    const voteKey = v.openedAt + ':' + v.windowSeconds;
+    if (S.isAdmin && _votingAutoCloseKey !== voteKey) {
+      _votingAutoCloseKey = voteKey;
+      adminCloseVoting();
+    }
+    return;
+  }
+  if (remainingEl) setText(remainingEl, Math.ceil(remaining));
 }
 
 // ── Timer border (scoped to timer card) ───────────────────────────────────────
@@ -1912,113 +1862,17 @@ function updateTimerBorder(st) {
   }
 }
 
-// RAF loop for smooth timer + border
+// RAF loop for smooth timer + border + voting countdown
+let _votingAutoCloseKey = null;
 (function rafLoop() {
   const st = S.serverState;
   if (st) {
     updateTimerDisplay(st);
     updateVotingCountdown(st);
     updateTimerBorder(st);
-    syncSpinOverlay(st);
-    syncVotingPopup(st);
   }
   requestAnimationFrame(rafLoop);
 })();
-
-function syncVotingPopup(st) {
-  const overlay = qs('#vote-popup-overlay');
-  const grid = qs('#vote-popup-grid');
-  const sub = qs('#vote-popup-sub');
-  const v = st.voting;
-
-  if (!v || !v.active) {
-    hide(overlay);
-    return;
-  }
-
-  const remaining = Math.ceil(v.windowSeconds - (Date.now() - v.openedAt) / 1000);
-  const isEligible = (v.eligibleVoters || []).includes(S.name);
-  if (!isEligible || remaining <= 0) {
-    hide(overlay);
-    return;
-  }
-
-  const myVote = v.votes ? v.votes[S.name] : null;
-  show(overlay);
-  setText(sub, myVote
-    ? `You selected ${myVote}. You can change it until timeout (${remaining}s left).`
-    : `Select one speaker before timeout (${remaining}s left).`);
-
-  const candidates = v.candidates || [];
-  grid.innerHTML = candidates.map((c) => {
-    const selected = c === myVote;
-    return `<button class="vote-popup-choice ${selected ? 'selected' : ''}" onclick='castVote(${JSON.stringify(c)})'>${selected ? '✓ ' : ''}${c}</button>`;
-  }).join('');
-}
-
-function renderWheelRows(names, centerIdx) {
-  const namesEl = qs('#wheel-names');
-  if (!names || names.length === 0) {
-    namesEl.textContent = '—';
-    return;
-  }
-  const offsets = [-2, -1, 0, 1, 2];
-  namesEl.innerHTML = offsets.map((o) => {
-    const idx = (centerIdx + o + names.length) % names.length;
-    const name = names[idx];
-    const cls = [
-      'wheel-row',
-      o === 0 ? 'center' : '',
-      name === S.name ? 'me' : '',
-    ].filter(Boolean).join(' ');
-    return `<div class="${cls}">${name}</div>`;
-  }).join('');
-}
-
-function syncSpinOverlay(st) {
-  const overlay = qs('#wheel-overlay');
-  const namesEl = qs('#wheel-names');
-  const resultEl = qs('#wheel-result');
-  const closeBtn = qs('#wheel-close-btn');
-  const spin = st.spinState;
-
-  if (!spin || !Array.isArray(spin.names) || spin.names.length === 0) {
-    hide(overlay);
-    return;
-  }
-
-  const spinKey = `${spin.groupId}:${spin.startedAt}`;
-  if (S.activeSpinKey !== spinKey) {
-    S.activeSpinKey = spinKey;
-  }
-  if (S.dismissedSpinKey === spinKey) {
-    hide(overlay);
-    return;
-  }
-
-  const elapsed = Date.now() - spin.startedAt;
-  const spinning = elapsed < spin.durationMs;
-  show(overlay);
-
-  if (spinning) {
-    namesEl.classList.add('spinning');
-    closeBtn.style.display = 'none';
-    const centerIdx = Math.floor(elapsed / 70) % spin.names.length;
-    renderWheelRows(spin.names, centerIdx);
-    resultEl.textContent = 'Spinning order...';
-    return;
-  }
-
-  namesEl.classList.remove('spinning');
-  renderWheelRows(spin.names, 0);
-  resultEl.innerHTML = `<strong>Order:</strong> ${spin.names.join(' → ')}`;
-  closeBtn.style.display = '';
-
-  if (elapsed > spin.durationMs + 1800) {
-    S.dismissedSpinKey = spinKey;
-    hide(overlay);
-  }
-}
 
 // ── Groups / Bracket ──────────────────────────────────────────────────────────
 
@@ -2080,17 +1934,21 @@ function renderGroups(st) {
         html += `<div style="margin-top:6px;font-size:0.78rem;color:var(--gray);">
           Winner: <strong style="color:var(--navy)">${result.winner || '—'}</strong>
           ${result.runner_up ? `&nbsp;· Runner-up: <strong>${result.runner_up}</strong> (${result.runner_up_votes} votes)` : ''}
-        </div>`;
+          ${S.isAdmin ? `<button class="btn btn-sm btn-outline" style="margin-left:8px;font-size:0.7rem;padding:2px 7px;" onclick="toggleEditWinner(${g.id})">✏ Edit</button>` : ''}
+        </div>
+        ${S.isAdmin ? `<div id="edit-winner-wrap-${g.id}" class="hidden" style="margin-top:6px;display:flex;gap:6px;align-items:center;">
+          <input type="text" id="edit-winner-${g.id}" value="${result.winner || ''}" placeholder="Winner name" style="flex:1;padding:6px 8px;font-size:0.82rem;border:1.5px solid var(--gray-light);border-radius:6px;" />
+          <button class="btn btn-sm btn-green" onclick="adminSetGroupWinner(${g.id})">Save</button>
+        </div>` : ''}`;
       }
       if (S.isAdmin && g.status === 'pending') {
         html += `<div class="btn-row" style="margin-top:8px;">
-          <button class="btn btn-sm btn-outline" onclick="adminSpinWheel(${g.id})">🎡 Spin Order</button>
           <button class="btn btn-sm btn-primary" onclick="adminSetActiveGroup(${g.id})">▶ Activate</button>
         </div>`;
       }
       if (S.isAdmin && g.status !== 'done') {
-        html += `<div style="margin-top:6px;">
-          <input type="text" id="winner-${g.id}" placeholder="Override winner name" style="width:160px;padding:5px 8px;font-size:0.82rem;border:1.5px solid #ccc;border-radius:5px;" />
+        html += `<div style="margin-top:6px;display:flex;gap:6px;align-items:center;">
+          <input type="text" id="winner-${g.id}" placeholder="Enter winner name" style="flex:1;padding:6px 8px;font-size:0.82rem;border:1.5px solid var(--gray-light);border-radius:6px;" />
           <button class="btn btn-sm btn-green" onclick="adminCompleteGroup(${g.id})">✓ Complete</button>
         </div>`;
       }
@@ -2204,66 +2062,39 @@ function renderVoting(st) {
   const card = qs('#voting-card');
   const v = st.voting;
 
-  if (!v.active && !v.results) { hide(card); return; }
+  // Card only shows while voting is active (results go to admin voting control section)
+  if (!v.active) { hide(card); hide('#vote-countdown-display'); return; }
   show(card);
 
   const buttonsWrap = qs('#vote-buttons-wrap');
   const progressWrap = qs('#vote-progress-wrap');
-  const resultsDiv = qs('#results-chart');
+  show('#vote-countdown-display');
 
-  if (v.active) {
-    hide(resultsDiv);
+  const totalVotes = Object.keys(v.votes).length;
+  const eligible = v.eligibleVoters.length;
+  const pct = eligible > 0 ? (totalVotes / eligible) * 100 : 0;
+  show(progressWrap);
+  qs('#vote-progress-bar').style.width = pct + '%';
+  setText('#vote-progress-label', `${totalVotes} / ${eligible} votes cast`);
 
-    const totalVotes = Object.keys(v.votes).length;
-    const eligible = v.eligibleVoters.length;
-    const pct = eligible > 0 ? (totalVotes / eligible) * 100 : 0;
-    show(progressWrap);
-    qs('#vote-progress-bar').style.width = pct + '%';
-    setText('#vote-progress-label', `${totalVotes} / ${eligible} votes cast`);
+  const isEligible = v.eligibleVoters.includes(S.name);
+  const myVote = v.votes[S.name];
+  const candidateList = v.candidates || [];
 
-    const isEligible = v.eligibleVoters.includes(S.name);
-    const myVote = v.votes[S.name];
-
-    if (isEligible) {
-      let html = '<div class="vote-candidate-grid">';
-      (v.candidates || []).forEach(c => {
-        html += `<button class="vote-candidate-btn ${myVote === c ? 'selected' : ''}" onclick='castVote(${JSON.stringify(c)})'>${c}</button>`;
-      });
-      html += '</div>';
-      buttonsWrap.innerHTML = html;
-    } else {
-      const inCandidateList = (v.candidates || []).includes(S.name);
-      buttonsWrap.innerHTML = inCandidateList
-        ? '<p class="muted">Voting in progress. You are in the active round and cannot vote.</p>'
-        : '<p class="muted">Voting in progress.</p>';
-    }
-  } else if (v.results) {
-    hide(progressWrap);
-    buttonsWrap.innerHTML = '';
-    show(resultsDiv);
-
-    const entries = Object.entries(v.results).sort((a, b) => b[1] - a[1]);
-    const max = entries[0]?.[1] || 1;
-    const winners = entries.filter(([, c]) => c === max).map(([n]) => n);
-
-    let html = '';
-    entries.forEach(([name, count]) => {
-      const pct = max > 0 ? (count / max) * 100 : 0;
-      const isWinner = winners.includes(name);
-      html += `<div class="result-row ${isWinner ? 'winner' : ''}">
-        <div class="result-row-label"><span>${name}${isWinner ? ' 🏅' : ''}</span><span class="count">${count} vote${count !== 1 ? 's' : ''}</span></div>
-        <div class="result-bar-outer"><div class="result-bar-inner" style="width:${pct}%"></div></div>
-      </div>`;
+  if (isEligible) {
+    let html = `<p class="muted" style="margin-bottom:8px;font-size:0.82rem;">Select one candidate:</p>`;
+    candidateList.forEach((c) => {
+      html += `<button class="vote-list-item ${myVote === c ? 'selected' : ''}" onclick='castVote(${safeJson(c)})'>${c}</button>`;
     });
-
-    if (winners.length > 1 && S.isAdmin && !v.tiebreakAdminVoteUsed) {
-      html += `<hr class="divider"/><p class="muted">Tie detected. Use tiebreak:</p>
-      <div class="btn-row" id="tiebreak-btns">
-        ${winners.map(w => `<button class="btn btn-sm btn-outline" onclick='adminTiebreak(${JSON.stringify(w)})'>${w}</button>`).join('')}
-      </div>`;
+    if (myVote) {
+      html += `<p class="muted" style="margin-top:6px;font-size:0.78rem;">You voted for <strong>${myVote}</strong>. You can change your vote.</p>`;
     }
-
-    resultsDiv.innerHTML = html;
+    buttonsWrap.innerHTML = html;
+  } else {
+    const inCandidateList = candidateList.includes(S.name);
+    buttonsWrap.innerHTML = inCandidateList
+      ? '<p class="muted" style="font-size:0.85rem;">You are a candidate — voting is in progress.</p>'
+      : '<p class="muted" style="font-size:0.85rem;">Voting in progress…</p>';
   }
 }
 
@@ -2295,7 +2126,7 @@ function renderParticipants(st) {
     const dqMark = st.disqualifiedSpeakers && st.disqualifiedSpeakers.includes(p.name)
       ? ` <span style="color:var(--red);font-size:0.75rem;">(DQ)</span>` : '';
     const removeBtn = S.isAdmin && st.phase === 'registration'
-      ? `<button class="btn btn-sm" style="margin-left:auto;font-size:0.7rem;padding:2px 8px;opacity:0.6" onclick='adminRemoveParticipant(${JSON.stringify(p.name)})'>✕</button>`
+      ? `<button class="btn btn-sm" style="margin-left:auto;font-size:0.7rem;padding:2px 8px;opacity:0.6" onclick='adminRemoveParticipant(${safeJson(p.name)})'>✕</button>`
       : '';
     return `<div class="participant-row ${p.name === S.name ? 'me' : ''}">${badge}<span>${p.name}${groupLabel}</span>${speakingNow}${dqMark}${removeBtn}</div>`;
   }).join('');
@@ -2337,6 +2168,11 @@ qs('#admin-save-settings').addEventListener('click', async () => {
   });
   try {
     await api('POST', '/api/admin/settings', body);
+    const st = await api('GET', '/api/state');
+    S.serverState = st;
+    S.lastVersion = st.version;
+    S.settingsInitialized = false;
+    render(st);
     alert('Settings saved.');
   } catch (e) { alert(e.message); }
 });
@@ -2376,7 +2212,7 @@ function renderAdminLateAlerts(st) {
       <span>⚠ Late arrival: <strong>${p.name}</strong></span>
       <div style="display:flex;gap:6px;align-items:center;">
         <select id="late-group-${p.name}" style="padding:4px 6px;font-size:0.8rem;">${opts}</select>
-        <button class="btn btn-sm btn-gold" onclick='adminAssignLate(${JSON.stringify(p.name)})'>Assign</button>
+        <button class="btn btn-sm btn-gold" onclick='adminAssignLate(${safeJson(p.name)})'>Assign</button>
       </div>
     </div>`;
   }).join('');
@@ -2406,7 +2242,7 @@ function dqSection(st) {
   return `<hr class="divider" /><div style="font-size:0.8rem;font-weight:700;color:var(--red);margin-bottom:4px;">Disqualified</div>` +
     dqList.map(name => `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
       <span style="font-size:0.82rem;">${name}</span>
-      <button class="btn btn-sm btn-outline" onclick='adminOverrideDQ(${JSON.stringify(name)})'>Override</button>
+      <button class="btn btn-sm btn-outline" onclick='adminOverrideDQ(${safeJson(name)})'>Override</button>
     </div>`).join('');
 }
 
@@ -2434,7 +2270,7 @@ function renderAdminRoundControl(st) {
     if (speakerQueue.length > 0) {
       html += `<div style="margin-top:8px;font-size:0.82rem;font-weight:700;">Set Speaker</div>
       <div class="btn-row">${speakerQueue.map(n =>
-        `<button class="btn btn-sm btn-outline" ${spoken.has(n) ? 'style="opacity:0.55"' : ''} onclick='adminSetSpeaker(${JSON.stringify(n)},${activeGroup?.id ?? 0})'>${spoken.has(n) ? '✓ ' : ''}${n}</button>`
+        `<button class="btn btn-sm btn-outline" ${spoken.has(n) ? 'style="opacity:0.55"' : ''} onclick='adminSetSpeaker(${safeJson(n)},${activeGroup?.id ?? 0})'>${spoken.has(n) ? '✓ ' : ''}${n}</button>`
       ).join('')}</div>`;
     }
     if (activeGroup && allGroupSpoken) {
@@ -2459,7 +2295,7 @@ function renderAdminRoundControl(st) {
         const groupLabel = gi === 0 ? 'A' : 'B';
         (st.bracket.quarter_groups[gi] || []).forEach(name => {
           if (!spoken.includes(name) && !(st.currentSpeaker && st.currentSpeaker.name === name)) {
-            html += `<button class="btn btn-sm btn-outline" onclick='adminSetSpeaker(${JSON.stringify(name)},${gi})' style="border-color:${gi===0?'#0081C8':'#EE334E'}">${groupLabel}: ${name}</button>`;
+            html += `<button class="btn btn-sm btn-outline" onclick='adminSetSpeaker(${safeJson(name)},${gi})' style="border-color:${gi===0?'#0081C8':'#EE334E'}">${groupLabel}: ${name}</button>`;
           }
         });
       });
@@ -2490,7 +2326,7 @@ function renderAdminRoundControl(st) {
       html += `<div style="margin-top:8px;font-size:0.82rem;font-weight:700;">Select Speaker</div><div class="btn-row">`;
       pair.forEach(name => {
         const hasSpoken = spoken.includes(name);
-        html += `<button class="btn btn-sm btn-outline ${hasSpoken ? '' : ''}" ${hasSpoken ? 'style="opacity:0.5"' : ''} onclick='adminSetSpeaker(${JSON.stringify(name)},${activePairIdx})'>${hasSpoken ? '✓ ' : ''}${name}</button>`;
+        html += `<button class="btn btn-sm btn-outline" ${hasSpoken ? 'style="opacity:0.5"' : ''} onclick='adminSetSpeaker(${safeJson(name)},${activePairIdx})'>${hasSpoken ? '✓ ' : ''}${name}</button>`;
       });
       html += `</div>`;
     }
@@ -2505,7 +2341,7 @@ function renderAdminRoundControl(st) {
     if (finalists.length > 0) {
       html += `<div style="margin-top:8px;font-size:0.82rem;font-weight:700;">Select Finalist</div><div class="btn-row">`;
       finalists.forEach(name => {
-        html += `<button class="btn btn-sm btn-outline" onclick='adminSetSpeaker(${JSON.stringify(name)},0)'>${name}</button>`;
+        html += `<button class="btn btn-sm btn-outline" onclick='adminSetSpeaker(${safeJson(name)},0)'>${name}</button>`;
       });
       html += `</div>`;
     }
@@ -2547,30 +2383,36 @@ async function adminOverrideDQ(name) {
   } catch (e) { alert(e.message); }
 }
 
-async function adminSpinWheel(groupId) {
-  try {
-    await api('POST', '/api/admin/spin-wheel', { groupId });
-    const st = await api('GET', '/api/state');
-    S.serverState = st;
-    S.lastVersion = st.version;
-    S.dismissedSpinKey = null;
-    render(st);
-  } catch (e) {
-    alert(e.message);
-  }
-}
-
-qs('#wheel-close-btn').addEventListener('click', () => {
-  if (S.activeSpinKey) S.dismissedSpinKey = S.activeSpinKey;
-  hide('#wheel-overlay');
-});
-
 async function adminCompleteGroup(groupId) {
   const winnerEl = qs(`#winner-${groupId}`);
   const winner = winnerEl ? winnerEl.value.trim() : '';
+  if (!winner) { alert('Please enter a winner name before completing the group.'); return; }
   try {
-    await api('POST', '/api/admin/advance', { action: 'complete-group', data: { groupId, winner: winner || undefined } });
+    await api('POST', '/api/admin/advance', { action: 'complete-group', data: { groupId, winner } });
   } catch (e) { alert(e.message); }
+}
+
+async function adminCompleteGroupFromVoting(groupId) {
+  const winnerEl = qs(`#winner-input-${groupId}`);
+  const winner = winnerEl ? winnerEl.value.trim() : '';
+  if (!winner) { alert('Please enter a winner name.'); return; }
+  try {
+    await api('POST', '/api/admin/advance', { action: 'complete-group', data: { groupId, winner } });
+  } catch (e) { alert(e.message); }
+}
+
+async function adminSetGroupWinner(groupId) {
+  const el = qs(`#edit-winner-${groupId}`);
+  const winner = el ? el.value.trim() : '';
+  if (!winner) { alert('Enter a winner name.'); return; }
+  try {
+    await api('POST', '/api/admin/advance', { action: 'set-group-winner', data: { groupId, winner } });
+  } catch (e) { alert(e.message); }
+}
+
+function toggleEditWinner(groupId) {
+  const wrap = qs(`#edit-winner-wrap-${groupId}`);
+  if (wrap) wrap.classList.toggle('hidden');
 }
 
 async function adminRevealPodium(thirdPlace) {
@@ -2682,19 +2524,51 @@ function renderAdminVotingControl(st) {
   let html = '';
   if (!v.active && !v.results) {
     if (canOpenVoting) {
-      html += `<button class="btn btn-gold" onclick="adminOpenVoting(${JSON.stringify(candidates)}, ${JSON.stringify(excludeParticipants)})">Open Voting</button>`;
+      html += `<button class="btn btn-gold" onclick='adminOpenVoting(${safeJson(candidates)}, ${safeJson(excludeParticipants)})'>Open Voting</button>`;
     }
   } else if (v.active) {
     html += `<p class="muted">Voting open — ${Object.keys(v.votes).length} / ${v.eligibleVoters.length} votes cast.</p>`;
-    html += `<button class="btn btn-danger btn-sm mt8" onclick="adminCloseVoting()">Close Voting &amp; Reveal Results</button>`;
+    html += `<button class="btn btn-danger btn-sm mt8" onclick="adminCloseVoting()">Close Voting &amp; Tally</button>`;
   } else if (v.results) {
-    html += `<p class="muted">Voting closed.</p>`;
+    // Show results chart
+    const entries = Object.entries(v.results).sort((a, b) => b[1] - a[1]);
+    const maxVotes = entries[0]?.[1] || 1;
+    const topNames = entries.filter(([, c]) => c === maxVotes).map(([n]) => n);
+    html += `<div class="results-chart" style="margin-bottom:10px;">`;
+    entries.forEach(([name, count]) => {
+      const pct = maxVotes > 0 ? (count / maxVotes) * 100 : 0;
+      const isTop = topNames.includes(name);
+      html += `<div class="result-row ${isTop ? 'winner' : ''}">
+        <div class="result-row-label"><span>${name}${isTop ? ' 🏅' : ''}</span><span class="count">${count} vote${count !== 1 ? 's' : ''}</span></div>
+        <div class="result-bar-outer"><div class="result-bar-inner" style="width:${pct}%"></div></div>
+      </div>`;
+    });
+    if (topNames.length > 1 && !v.tiebreakAdminVoteUsed) {
+      html += `<p class="muted" style="margin-top:6px;">Tie! Use tiebreak:</p>
+      <div class="btn-row">${topNames.map(w => `<button class="btn btn-sm btn-outline" onclick='adminTiebreak(${safeJson(w)})'>${w}</button>`).join('')}</div>`;
+    }
+    html += `</div>`;
+
+    const topCandidate = entries[0]?.[0] || '';
     if (completeAction) {
       const _action = completeAction;
       window._pendingCompleteAction = _action;
-      html += `<button class="btn btn-green btn-sm mt8" onclick="window._pendingCompleteAction()">${completeLabel}</button>`;
+      if (st.phase === 'group') {
+        const activeGroup = st.groups?.find(g => g.status === 'active');
+        if (activeGroup) {
+          html += `<div style="margin-bottom:8px;">
+            <label style="font-size:0.78rem;font-weight:700;color:var(--navy);display:block;margin-bottom:4px;">Confirm winner:</label>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input type="text" id="winner-input-${activeGroup.id}" value="${topCandidate}" placeholder="Winner name" style="flex:1;padding:8px;border:1.5px solid var(--gray-light);border-radius:6px;font-size:0.9rem;" />
+              <button class="btn btn-green btn-sm" onclick="adminCompleteGroupFromVoting(${activeGroup.id})">✓ Assign</button>
+            </div>
+          </div>`;
+        }
+      } else {
+        html += `<button class="btn btn-green btn-sm mt8" onclick="window._pendingCompleteAction()">${completeLabel}</button>`;
+      }
     }
-    html += `<button class="btn btn-outline btn-sm mt8" onclick="adminOpenVoting(${JSON.stringify(candidates)}, ${JSON.stringify(excludeParticipants)})">Reopen Voting</button>`;
+    html += `<button class="btn btn-outline btn-sm mt8" onclick='adminOpenVoting(${safeJson(candidates)}, ${safeJson(excludeParticipants)})'>Reopen Voting</button>`;
   }
 
   // 3rd place tiebreak — shown when champion exists but 3rd is still unresolved
@@ -2702,8 +2576,8 @@ function renderAdminVotingControl(st) {
     const [c1, c2] = st.bracket.third_place_candidates;
     html += `<hr class="divider" /><p class="muted" style="margin-bottom:6px;">Cast decisive vote for 3rd place:</p>
     <div class="btn-row">
-      <button class="btn btn-sm btn-outline" onclick='adminRevealPodium(${JSON.stringify(c1.name)})'>${c1.name}</button>
-      <button class="btn btn-sm btn-outline" onclick='adminRevealPodium(${JSON.stringify(c2.name)})'>${c2.name}</button>
+      <button class="btn btn-sm btn-outline" onclick='adminRevealPodium(${safeJson(c1.name)})'>${c1.name}</button>
+      <button class="btn btn-sm btn-outline" onclick='adminRevealPodium(${safeJson(c2.name)})'>${c2.name}</button>
     </div>`;
   }
 
@@ -2735,12 +2609,20 @@ async function adminOpenVoting(candidates, excludeParticipants) {
   try {
     const ws = parseInt(qs('#set-votingWindowSeconds')?.value || '60');
     await api('POST', '/api/admin/open-voting', { candidates, windowSeconds: ws, excludeParticipants: excludeParticipants || [] });
+    const st = await api('GET', '/api/state');
+    S.serverState = st;
+    S.lastVersion = st.version;
+    render(st);
   } catch (e) { alert(e.message); }
 }
 
 async function adminCloseVoting() {
   try {
     await api('POST', '/api/admin/close-voting', {});
+    const st = await api('GET', '/api/state');
+    S.serverState = st;
+    S.lastVersion = st.version;
+    render(st);
   } catch (e) { alert(e.message); }
 }
 
@@ -2753,18 +2635,94 @@ async function adminTiebreak(candidateName) {
 
 // ── Phase advance buttons ─────────────────────────────────────────────────────
 
+// ── Quarter groups preview & drag-drop ────────────────────────────────────────
+
+let _quarterGroups = { a: [], b: [] };
+let _qDraggedName = null;
+let _qDraggedFrom = null;
+
+function computeAdvancing(st) {
+  const results = st.bracket.group_results;
+  const winners = results.map(r => r.winner).filter(Boolean);
+  const runnersUp = results
+    .filter(r => r.runner_up)
+    .map(r => ({ name: r.runner_up, votes: r.runner_up_votes }))
+    .sort((a, b) => b.votes - a.votes);
+  const needed = Math.max(0, 8 - winners.length);
+  return [...new Set([...winners, ...runnersUp.slice(0, needed).map(r => r.name)])].slice(0, 8);
+}
+
+function showQuarterPreview(st) {
+  const advancing = computeAdvancing(st);
+  const shuffled = [...advancing].sort(() => Math.random() - 0.5);
+  _quarterGroups = { a: shuffled.slice(0, 4), b: shuffled.slice(4) };
+  renderQuarterPreview();
+  show('#quarter-preview-overlay');
+}
+
+function renderQuarterPreview() {
+  const container = qs('#quarter-preview-groups');
+  const defs = [
+    { key: 'a', label: 'Group A', cls: 'group-a', color: '#0081C8' },
+    { key: 'b', label: 'Group B', cls: 'group-b', color: '#EE334E' },
+  ];
+  container.innerHTML = defs.map(g => {
+    const chips = _quarterGroups[g.key].map(name =>
+      `<div class="quarter-chip" draggable="true" data-name="${name}" data-group="${g.key}">${name}</div>`
+    ).join('');
+    return `<div class="quarter-drop-zone ${g.cls}" id="qzone-${g.key}">
+      <div class="debate-group-title" style="color:${g.color};margin-bottom:8px;">${g.label} (${_quarterGroups[g.key].length})</div>
+      ${chips || '<p class="muted" style="font-size:0.78rem;">Drop here</p>'}
+    </div>`;
+  }).join('');
+
+  container.querySelectorAll('.quarter-chip').forEach(chip => {
+    chip.addEventListener('dragstart', () => {
+      _qDraggedName = chip.dataset.name;
+      _qDraggedFrom = chip.dataset.group;
+      chip.classList.add('dragging');
+    });
+    chip.addEventListener('dragend', () => {
+      chip.classList.remove('dragging');
+      container.querySelectorAll('.quarter-drop-zone').forEach(z => z.classList.remove('drag-over'));
+    });
+  });
+
+  container.querySelectorAll('.quarter-drop-zone').forEach(zone => {
+    const key = zone.id.replace('qzone-', '');
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      if (!_qDraggedName || _qDraggedFrom === key) return;
+      _quarterGroups[_qDraggedFrom] = _quarterGroups[_qDraggedFrom].filter(n => n !== _qDraggedName);
+      _quarterGroups[key] = [..._quarterGroups[key], _qDraggedName];
+      _qDraggedName = null;
+      _qDraggedFrom = null;
+      renderQuarterPreview();
+    });
+  });
+}
+
+function cancelQuarterPreview() {
+  hide('#quarter-preview-overlay');
+}
+
+async function confirmQuarterPreview() {
+  const groupA = _quarterGroups.a;
+  const groupB = _quarterGroups.b;
+  if (!confirm(`Start Quarter-Debate?\nGroup A: ${groupA.join(', ') || '(empty)'}\nGroup B: ${groupB.join(', ') || '(empty)'}`)) return;
+  hide('#quarter-preview-overlay');
+  await adminAdvance('start-quarter', { customGroups: [groupA, groupB] });
+}
+
 qs('#admin-start-quarter').addEventListener('click', async () => {
   const st = S.serverState;
   if (!st) return;
-  const results = st.bracket.group_results;
   const allGroupsDone = st.groups.every(g => g.status === 'done');
   if (!allGroupsDone) { alert('Not all groups are complete yet.'); return; }
-  const winners = results.map(r => r.winner).filter(Boolean);
-  const runnersUp = results.filter(r => r.runner_up).map(r => ({ name: r.runner_up, votes: r.runner_up_votes })).sort((a, b) => b.votes - a.votes);
-  const needed = Math.max(0, 8 - winners.length);
-  const advancing = [...winners, ...runnersUp.slice(0, needed).map(r => r.name)];
-  if (!confirm(`Advance to Quarter-Debate with these ${advancing.length} participants?\n\n${advancing.join(', ')}`)) return;
-  await adminAdvance('start-quarter');
+  showQuarterPreview(st);
 });
 qs('#admin-start-semi').addEventListener('click', async () => {
   const st = S.serverState;
