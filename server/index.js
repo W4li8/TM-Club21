@@ -5,7 +5,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 const express = require('express');
 const path = require('path');
 const { getState, bump, resetState } = require('./state');
-const { loadQuestions, getRandomUnusedQuestion } = require('./questions');
+const { loadQuestions, getRandomUnusedQuestion, getPhases } = require('./questions');
 
 const app = express();
 app.use(express.json());
@@ -45,6 +45,19 @@ function isAdminReq(req) {
   const pwd = req.headers['x-password'] || req.body?.password;
   return pwd === ADMIN_PASSWORD;
 }
+
+// ── Public: known-name check & phases ────────────────────────────────────────
+
+app.get('/api/known-name', (req, res) => {
+  const name = (req.query.name || '').trim();
+  const st = getState();
+  const known = st.participants.some((p) => p.name === name);
+  res.json({ known });
+});
+
+app.get('/api/phases', (req, res) => {
+  res.json(getPhases());
+});
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -271,24 +284,74 @@ app.post('/api/admin/timer', (req, res) => {
 
   if (action === 'start') {
     if (!st.currentSpeaker) {
-      st.currentSpeaker = { name: speakerName, groupId, startTime: Date.now(), timerState: 'running' };
+      st.currentSpeaker = { name: speakerName, groupId, startTime: Date.now(), timerState: 'running', stoppedAt: null, disqualified: false };
     } else {
       st.currentSpeaker.startTime = Date.now();
+      st.currentSpeaker.stoppedAt = null;
+      st.currentSpeaker.disqualified = false;
       st.currentSpeaker.timerState = 'running';
     }
   } else if (action === 'stop') {
-    if (st.currentSpeaker) st.currentSpeaker.timerState = 'stopped';
+    if (st.currentSpeaker && st.currentSpeaker.timerState === 'running') {
+      const stoppedAt = Date.now();
+      const elapsedS = (stoppedAt - st.currentSpeaker.startTime) / 1000;
+      const sil = st.settings.silenceEnd;
+      const red = st.settings.redEnd;
+      const dq = elapsedS < (sil - 5) || elapsedS > (red + 5);
+      st.currentSpeaker.timerState = 'stopped';
+      st.currentSpeaker.stoppedAt = stoppedAt;
+      st.currentSpeaker.disqualified = dq;
+      if (dq) {
+        const name = st.currentSpeaker.name;
+        if (name && !st.disqualifiedSpeakers.includes(name)) {
+          st.disqualifiedSpeakers.push(name);
+        }
+      }
+    }
   } else if (action === 'restart') {
     if (st.currentSpeaker) {
       st.currentSpeaker.startTime = Date.now();
+      st.currentSpeaker.stoppedAt = null;
+      st.currentSpeaker.disqualified = false;
       st.currentSpeaker.timerState = 'running';
     }
   } else if (action === 'set-speaker') {
-    st.currentSpeaker = { name: speakerName, groupId, startTime: null, timerState: 'idle' };
+    st.currentSpeaker = { name: speakerName, groupId, startTime: null, stoppedAt: null, disqualified: false, timerState: 'idle' };
   }
 
   bump();
   res.json({ ok: true, currentSpeaker: st.currentSpeaker });
+});
+
+// ── Admin: Override DQ ────────────────────────────────────────────────────────
+
+app.post('/api/admin/override-dq', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  const { name } = req.body;
+  const st = getState();
+  const idx = st.disqualifiedSpeakers.indexOf(name);
+  if (idx !== -1) st.disqualifiedSpeakers.splice(idx, 1);
+  if (st.currentSpeaker && st.currentSpeaker.name === name) {
+    st.currentSpeaker.disqualified = false;
+  }
+  bump();
+  res.json({ ok: true });
+});
+
+// ── Self opt-out ──────────────────────────────────────────────────────────────
+
+app.post('/api/self-opt', (req, res) => {
+  if (!checkUser(req, res)) return;
+  const { name, role } = req.body;
+  const st = getState();
+  if (st.phase !== 'registration') {
+    return res.status(400).json({ error: 'Registration already closed' });
+  }
+  const p = st.participants.find((x) => x.name === name);
+  if (!p) return res.status(404).json({ error: 'Participant not found' });
+  p.role = role === 'competitor' ? 'competitor' : 'observer';
+  bump();
+  res.json({ ok: true, role: p.role });
 });
 
 // ── Admin: Open voting ────────────────────────────────────────────────────────
@@ -296,15 +359,19 @@ app.post('/api/admin/timer', (req, res) => {
 app.post('/api/admin/open-voting', (req, res) => {
   if (!checkAdmin(req, res)) return;
   const st = getState();
-  const { candidates, windowSeconds } = req.body;
+  const { candidates: rawCandidates, windowSeconds, excludeParticipants } = req.body;
 
-  if (!candidates || !Array.isArray(candidates)) {
+  if (!rawCandidates || !Array.isArray(rawCandidates)) {
     return res.status(400).json({ error: 'Candidates required' });
   }
 
-  // Eligible = all participants except current round contestants
+  // Filter DQ'd speakers from candidates
+  const candidates = rawCandidates.filter((c) => !st.disqualifiedSpeakers.includes(c));
+
+  // Eligible = all participants except candidates AND any explicitly excluded speakers
+  const excluded = new Set([...candidates, ...(excludeParticipants || [])]);
   const eligible = st.participants
-    .filter((p) => !candidates.includes(p.name))
+    .filter((p) => !excluded.has(p.name))
     .map((p) => p.name);
 
   st.voting = {
@@ -383,50 +450,175 @@ app.post('/api/admin/tiebreak-vote', (req, res) => {
 
 // ── Admin: Advance phase ──────────────────────────────────────────────────────
 
+function votingTop2(st) {
+  if (!st.voting.results) return { winner: null, loser: null, winner_votes: 0, loser_votes: 0 };
+  const entries = Object.entries(st.voting.results).sort((a, b) => b[1] - a[1]);
+  return {
+    winner: entries[0]?.[0] ?? null,
+    winner_votes: entries[0]?.[1] ?? 0,
+    loser: entries[1]?.[0] ?? null,
+    loser_votes: entries[1]?.[1] ?? 0,
+  };
+}
+
 app.post('/api/admin/advance', (req, res) => {
   if (!checkAdmin(req, res)) return;
   const { action, data } = req.body;
   const st = getState();
 
   if (action === 'next-speaker') {
-    st.currentSpeaker = null;
-    st.currentQuestion = null;
-    bump();
-  } else if (action === 'complete-group') {
-    const { groupId, winner } = data || {};
-    const group = st.groups.find((g) => g.id === groupId);
-    if (group) {
-      group.status = 'done';
-      if (winner) st.bracket.group_winners.push(winner);
+    // Mark current speaker as spoken in their phase tracking
+    if (st.currentSpeaker) {
+      const name = st.currentSpeaker.name;
+      if (st.phase === 'quarter_debate' && name) {
+        if (!st.bracket.quarter_spoken.includes(name)) st.bracket.quarter_spoken.push(name);
+      } else if (st.phase === 'semi_final' && name) {
+        st.bracket.semi_pairs.forEach((pair, pairIdx) => {
+          if (pair.includes(name)) {
+            if (!st.bracket.semi_spoken[pairIdx]) st.bracket.semi_spoken[pairIdx] = [];
+            if (!st.bracket.semi_spoken[pairIdx].includes(name)) st.bracket.semi_spoken[pairIdx].push(name);
+          }
+        });
+      }
     }
     st.currentSpeaker = null;
     st.currentQuestion = null;
     bump();
+
+  } else if (action === 'complete-group') {
+    const { groupId } = data || {};
+    const group = st.groups.find((g) => g.id === groupId);
+    if (!group) { res.status(400).json({ error: 'Group not found' }); return; }
+
+    // Auto-detect winner + runner_up from voting results
+    const { winner: vWinner, loser: vRunnerUp, loser_votes: vRunnerVotes } = votingTop2(st);
+    const winner = (data && data.winner) || vWinner;
+    const runner_up = vRunnerUp;
+    const runner_up_votes = vRunnerVotes;
+
+    const idx = st.bracket.group_results.findIndex((r) => r.groupId === groupId);
+    const result = { groupId, winner, runner_up, runner_up_votes };
+    if (idx >= 0) st.bracket.group_results[idx] = result;
+    else st.bracket.group_results.push(result);
+
+    group.status = 'done';
+    st.currentSpeaker = null;
+    st.currentQuestion = null;
+    bump();
+
   } else if (action === 'start-quarter') {
+    const results = st.bracket.group_results;
+    const winners = results.map((r) => r.winner).filter(Boolean);
+    const runnersUp = results
+      .filter((r) => r.runner_up)
+      .map((r) => ({ name: r.runner_up, votes: r.runner_up_votes }))
+      .sort((a, b) => b.votes - a.votes);
+
+    const needed = Math.max(0, 8 - winners.length);
+    const advancingRunners = runnersUp.slice(0, needed).map((r) => r.name);
+    const advancing = [...new Set([...winners, ...advancingRunners])].slice(0, 8);
+
+    const shuffled = [...advancing].sort(() => Math.random() - 0.5);
+    st.bracket.advancing = advancing;
+    st.bracket.quarter_groups = [shuffled.slice(0, 4), shuffled.slice(4)];
+    st.bracket.quarter_spoken = [];
+    st.bracket.quarter_winner_idx = null;
     st.phase = 'quarter_debate';
-    // Randomly assign group winners into teams of ~4
-    const winners = [...st.bracket.group_winners].sort(() => Math.random() - 0.5);
-    const teams = [];
-    while (winners.length > 0) teams.push(winners.splice(0, 4));
-    st.bracket.quarter_teams = teams;
     bump();
+
   } else if (action === 'complete-quarter') {
-    const { winner } = data || {};
-    if (winner) st.bracket.semi_winners.push(winner);
+    // Auto-detect winner group from voting ('Group A' vs 'Group B')
+    let winnerIdx = data && data.winnerGroupIdx != null ? data.winnerGroupIdx : null;
+    if (winnerIdx === null && st.voting.results) {
+      const gA = st.voting.results['Group A'] || 0;
+      const gB = st.voting.results['Group B'] || 0;
+      winnerIdx = gA >= gB ? 0 : 1;
+    }
+    st.bracket.quarter_winner_idx = winnerIdx ?? 0;
+    st.currentSpeaker = null;
+    st.currentQuestion = null;
     bump();
+
   } else if (action === 'start-semi') {
+    const wIdx = st.bracket.quarter_winner_idx;
+    if (wIdx === null || wIdx === undefined) { res.status(400).json({ error: 'Quarter result not set' }); return; }
+    const four = st.bracket.quarter_groups[wIdx] || [];
+    const shuffled = [...four].sort(() => Math.random() - 0.5);
+    st.bracket.semi_pairs = [[shuffled[0], shuffled[1]], [shuffled[2], shuffled[3]]];
+    st.bracket.semi_spoken = [[], []];
+    st.bracket.semi_results = [];
+    st.bracket.finalists = [];
+    st.bracket.third_place_candidates = [];
     st.phase = 'semi_final';
     bump();
+
   } else if (action === 'complete-semi') {
-    const { winner } = data || {};
-    if (winner) st.bracket.finalist = winner;
+    const { pairIdx } = data || {};
+    const { winner, winner_votes, loser, loser_votes } = votingTop2(st);
+    const finalWinner = (data && data.winner) || winner;
+    const finalLoser = (data && data.loser) || loser;
+    const votesSnapshot = { ...(st.voting.votes || {}) };
+
+    st.bracket.semi_results.push({ pairIdx, winner: finalWinner, loser: finalLoser, winner_votes, loser_votes, votesSnapshot });
+    if (finalWinner && !st.bracket.finalists.includes(finalWinner)) st.bracket.finalists.push(finalWinner);
+    if (finalLoser) st.bracket.third_place_candidates.push({ name: finalLoser, votes: loser_votes, pairIdx });
+
+    st.currentSpeaker = null;
+    st.currentQuestion = null;
     bump();
+
   } else if (action === 'start-final') {
     st.phase = 'final';
     bump();
+
+  } else if (action === 'complete-final') {
+    const { winner, loser } = votingTop2(st);
+    const finalWinner = (data && data.winner) || winner;
+    const finalLoser = (data && data.loser) || loser;
+    st.bracket.champion = finalWinner;
+    st.bracket.final_result = { winner: finalWinner, loser: finalLoser };
+    st.currentSpeaker = null;
+    st.currentQuestion = null;
+    bump();
+
+  } else if (action === 'reveal-podium') {
+    const cands = st.bracket.third_place_candidates;
+    let third = null;
+
+    if (cands.length === 1) {
+      third = cands[0].name;
+    } else if (cands.length >= 2) {
+      let v0 = cands[0].votes;
+      let v1 = cands[1].votes;
+
+      if (v0 === v1) {
+        // Apply tiebreak: remove first admin's vote from the matchup they voted in
+        const firstAdmin = st.participants
+          .filter((p) => st.adminList.includes(p.name))
+          .sort((a, b) => a.joinedAt - b.joinedAt)[0];
+
+        if (firstAdmin) {
+          const r0 = st.bracket.semi_results.find((r) => r.pairIdx === cands[0].pairIdx);
+          const r1 = st.bracket.semi_results.find((r) => r.pairIdx === cands[1].pairIdx);
+          if (r0 && r0.votesSnapshot && r0.votesSnapshot[firstAdmin.name] === cands[0].name) v0--;
+          if (r1 && r1.votesSnapshot && r1.votesSnapshot[firstAdmin.name] === cands[1].name) v1--;
+        }
+      }
+
+      if (v0 > v1) third = cands[0].name;
+      else if (v1 > v0) third = cands[1].name;
+      else third = (data && data.thirdPlace) || null; // admin decisive vote
+    }
+
+    st.bracket.third_place = third;
+    // Only close if 3rd place is resolved
+    if (third || (data && data.thirdPlace !== undefined)) st.phase = 'closed';
+    bump();
+
   } else if (action === 'close') {
     st.phase = 'closed';
     bump();
+
   } else if (action === 'reset') {
     resetState();
     loadQuestions();

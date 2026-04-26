@@ -22,7 +22,6 @@
   --yellow: #F9A825;
   --radius: 10px;
   --shadow: 0 2px 12px rgba(0,0,0,0.12);
-  --border-size: 6px;
 }
 
 html, body {
@@ -30,49 +29,6 @@ html, body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   background: var(--offwhite);
   color: #1a2233;
-}
-
-body {
-  position: relative;
-}
-
-/* ── Timer border overlay ────────────────────────────────────── */
-#timer-border {
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  border-radius: 0;
-}
-
-#timer-border.border-green {
-  animation: none;
-  border: var(--border-size) solid var(--green);
-}
-#timer-border.border-yellow {
-  border: var(--border-size) solid var(--yellow);
-}
-#timer-border.border-red {
-  border: var(--border-size) solid var(--red);
-}
-#timer-border.border-black {
-  border: var(--border-size) solid #111;
-  animation: pulse-border 0.6s ease-in-out infinite alternate;
-}
-
-@keyframes pulse-border {
-  from { border-color: #111; box-shadow: inset 0 0 0 2px #111; }
-  to   { border-color: #555; box-shadow: inset 0 0 0 2px #555; }
-}
-
-/* Conic sweep canvas fills the timer-border during sweep phases */
-#sweep-canvas {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9998;
-  width: 100%;
-  height: 100%;
 }
 
 /* ── Layout ──────────────────────────────────────────────────── */
@@ -119,6 +75,113 @@ header svg { flex-shrink: 0; }
   color: rgba(255,255,255,0.6);
 }
 .header-right strong { color: var(--gold); font-size: 0.85rem; }
+
+/* ── Phase timeline strip ────────────────────────────────────── */
+#phase-timeline {
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-light);
+  padding: 10px 12px 8px;
+  position: sticky;
+  top: 58px;
+  z-index: 90;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+#phase-steps {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+#phase-steps::-webkit-scrollbar { display: none; }
+
+.phase-step {
+  flex: 1;
+  min-width: 52px;
+  text-align: center;
+  padding: 4px 2px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s;
+  position: relative;
+}
+.phase-step:hover { background: var(--offwhite); }
+
+.phase-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gray-light);
+  margin: 0 auto 5px;
+  transition: background 0.2s;
+}
+.phase-step.done .phase-dot { background: var(--green); }
+.phase-step.current .phase-dot {
+  background: var(--gold);
+  box-shadow: 0 0 0 3px rgba(255,215,0,0.35);
+}
+
+.phase-label {
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--gray);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  max-width: 100%;
+}
+.phase-step.done .phase-label { color: var(--gray); }
+.phase-step.current .phase-label { color: var(--navy); font-weight: 800; }
+
+.phase-sep {
+  color: var(--gray-light);
+  font-size: 0.8rem;
+  padding-top: 2px;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+/* Phase popover */
+#phase-popover {
+  margin-top: 8px;
+  background: var(--offwhite);
+  border: 1px solid var(--gray-light);
+  border-radius: 8px;
+  padding: 10px 12px;
+  position: relative;
+}
+#phase-popover h4 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 4px;
+}
+#phase-popover p {
+  font-size: 0.8rem;
+  color: var(--gray);
+  line-height: 1.5;
+}
+#phase-popover .pop-duration {
+  margin-top: 5px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gold-dark);
+}
+#popover-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 0.85rem;
+  color: var(--gray);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0 4px;
+  line-height: 1;
+}
 
 /* ── Cards / Sections ────────────────────────────────────────── */
 .card {
@@ -249,29 +312,30 @@ input:focus, select:focus {
 .btn-full { width: 100%; }
 .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 
-/* ── Role picker ─────────────────────────────────────────────── */
-.role-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 6px;
-}
-
-.role-btn {
-  padding: 16px 10px;
-  border: 2px solid var(--gray-light);
-  border-radius: 10px;
-  background: var(--white);
-  cursor: pointer;
+/* ── Welcome banner ──────────────────────────────────────────── */
+#welcome-banner {
   text-align: center;
-  transition: border-color 0.2s, background 0.2s;
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--navy);
+  padding: 16px 0 8px;
 }
-.role-btn:hover { border-color: var(--navy-light); }
-.role-btn.selected { border-color: var(--gold); background: #fffbe6; }
-.role-btn span { display: block; font-size: 1.5rem; margin-bottom: 4px; }
+#welcome-banner .trophy { font-size: 2.5rem; margin-bottom: 10px; }
+#welcome-banner h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--navy);
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
+#welcome-banner p { color: var(--gray); font-size: 0.9rem; }
+
+/* ── Opt-out card ────────────────────────────────────────────── */
+#opt-out-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+#opt-out-card .opt-label { font-weight: 600; font-size: 0.9rem; }
+#opt-out-card .opt-hint { font-size: 0.78rem; color: var(--gray); margin-top: 2px; }
 
 /* ── Question display ────────────────────────────────────────── */
 #question-display {
@@ -298,9 +362,45 @@ input:focus, select:focus {
 }
 
 /* ── Timer ───────────────────────────────────────────────────── */
+#timer-card { position: relative; overflow: visible; }
+
+#timer-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  border-radius: var(--radius);
+  width: 100%;
+  height: 100%;
+}
+
+/* Flash states via outline (doesn't affect layout) */
+@keyframes flash-grey {
+  0%, 100% { outline: 5px solid rgba(155,155,155,0.65); }
+  50%       { outline: 5px solid rgba(155,155,155,0.1); }
+}
+@keyframes flash-green {
+  0%, 100% { outline: 5px solid #2E7D32; }
+  50%       { outline: 5px solid rgba(46,125,50,0.12); }
+}
+@keyframes flash-red {
+  0%, 100% { outline: 5px solid #BF0A30; }
+  50%       { outline: 5px solid rgba(191,10,48,0.12); }
+}
+@keyframes flash-black {
+  0%, 100% { outline: 5px solid #111; }
+  50%       { outline: 5px solid rgba(17,17,17,0.1); }
+}
+
+#timer-card.flash-grey  { animation: flash-grey  0.9s ease-in-out infinite; outline-offset: 0; }
+#timer-card.flash-green { animation: flash-green 0.45s ease-in-out infinite; outline-offset: 0; }
+#timer-card.flash-red   { animation: flash-red   0.45s ease-in-out infinite; outline-offset: 0; }
+#timer-card.flash-black { animation: flash-black 0.6s ease-in-out infinite; outline-offset: 0; }
+
 #timer-display {
   text-align: center;
   padding: 22px 18px;
+  position: relative;
 }
 
 .timer-clock {
@@ -332,10 +432,45 @@ input:focus, select:focus {
 .pill-running{ background: #e6f7ec; color: var(--green); }
 .pill-stopped{ background: #fdecea; color: var(--red); }
 
-/* ── Voting ──────────────────────────────────────────────────── */
-.vote-progress {
-  margin-bottom: 12px;
+/* DQ overlay */
+#dq-overlay {
+  position: absolute;
+  inset: -18px;
+  background: rgba(191,10,48,0.94);
+  color: var(--white);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
 }
+#dq-overlay .dq-label {
+  font-size: 1.9rem;
+  font-weight: 900;
+  letter-spacing: 4px;
+}
+#dq-overlay .dq-time {
+  font-size: 1rem;
+  font-weight: 600;
+  opacity: 0.8;
+  margin-top: 4px;
+}
+#dq-override-btn {
+  margin-top: 12px;
+  background: rgba(255,255,255,0.18);
+  border: 1.5px solid rgba(255,255,255,0.5);
+  color: var(--white);
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+#dq-override-btn:hover { background: rgba(255,255,255,0.28); }
+
+/* ── Voting ──────────────────────────────────────────────────── */
+.vote-progress { margin-bottom: 12px; }
 .progress-bar-outer {
   width: 100%;
   height: 8px;
@@ -425,10 +560,7 @@ input:focus, select:focus {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-.bracket-slot .slot-name {
-  font-weight: 600;
-  color: var(--navy);
-}
+.bracket-slot .slot-name { font-weight: 600; color: var(--navy); }
 .bracket-slot.winner { border-color: var(--gold); background: #fffbe6; }
 .bracket-slot.tbd { opacity: 0.5; font-style: italic; }
 
@@ -467,12 +599,10 @@ input:focus, select:focus {
   font-weight: 600;
 }
 .member-chip.current { background: var(--gold); color: var(--navy); }
+.member-chip.dq { background: #fdecea; color: var(--red); text-decoration: line-through; }
 
 /* ── Admin section ───────────────────────────────────────────── */
-#admin-section {
-  border-top: 3px solid var(--gold);
-  margin-top: 20px;
-}
+#admin-section { border-top: 3px solid var(--gold); margin-top: 20px; }
 
 #admin-section .admin-header {
   background: var(--navy);
@@ -489,7 +619,6 @@ input:focus, select:focus {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
-
 .settings-grid .form-group { margin-bottom: 0; }
 
 .late-alert {
@@ -536,15 +665,10 @@ input:focus, select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: none;
 }
 #wheel-names.spinning { color: var(--gold); }
 
-.wheel-result {
-  margin-top: 14px;
-  font-size: 0.85rem;
-  color: var(--gray);
-}
+.wheel-result { margin-top: 14px; font-size: 0.85rem; color: var(--gray); }
 
 /* ── Participant list ────────────────────────────────────────── */
 .participant-row {
@@ -568,11 +692,7 @@ input:focus, select:focus {
 .badge-admin      { background: var(--gold); color: var(--navy); }
 
 /* ── Voting timer ────────────────────────────────────────────── */
-.voting-countdown {
-  font-size: 0.82rem;
-  color: var(--gray);
-  margin-bottom: 6px;
-}
+.voting-countdown { font-size: 0.82rem; color: var(--gray); margin-bottom: 6px; }
 
 /* ── Phase badge ─────────────────────────────────────────────── */
 .phase-badge {
@@ -596,6 +716,163 @@ input:focus, select:focus {
 .muted { color: var(--gray); font-size: 0.85rem; }
 hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px 0; }
 
+/* ── Podium overlay ──────────────────────────────────────────── */
+#podium-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,21,0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 600;
+}
+#podium-overlay.hidden { display: none; }
+
+.podium-box {
+  text-align: center;
+  color: var(--white);
+  padding: 30px 24px;
+  max-width: 420px;
+  width: 95%;
+}
+.podium-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 28px;
+}
+.podium-places {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.podium-place {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.podium-place .place-medal { font-size: 2.4rem; }
+.podium-place .place-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--white);
+}
+.podium-place .place-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.5);
+}
+.podium-place.first .place-name { font-size: 1.3rem; color: var(--gold); }
+.podium-pillar {
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px 4px 0 0;
+  width: 100%;
+  min-width: 100px;
+}
+.podium-place.first .podium-pillar  { height: 80px; }
+.podium-place.second .podium-pillar { height: 56px; }
+.podium-place.third .podium-pillar  { height: 36px; }
+
+/* ── Quarter / Semi bracket cards ────────────────────────────── */
+.debate-group {
+  border: 1.5px solid var(--gray-light);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.debate-group.group-a { border-color: #0081C8; }
+.debate-group.group-b { border-color: #EE334E; }
+.debate-group-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.group-a .debate-group-title { color: #0081C8; }
+.group-b .debate-group-title { color: #EE334E; }
+
+.speaker-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--gray-light);
+  color: var(--navy);
+  border-radius: 99px;
+  padding: 2px 9px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin: 2px;
+}
+.speaker-chip.spoken { background: #e6f7ec; color: var(--green); }
+.speaker-chip.speaking { background: var(--gold); color: var(--navy); }
+
+.matchup-card {
+  border: 1.5px solid var(--gray-light);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.matchup-card.active { border-color: var(--gold); background: #fffbe6; }
+.matchup-card.done { opacity: 0.7; }
+.matchup-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex: 1;
+  text-align: center;
+}
+.matchup-vs {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--gray);
+  text-transform: uppercase;
+}
+.matchup-winner { color: var(--green); font-size: 0.8rem; font-weight: 700; }
+
+/* ── Runner-up advancement preview ───────────────────────────── */
+.advancement-preview {
+  background: var(--offwhite);
+  border: 1px solid var(--gray-light);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 10px;
+}
+.advancement-preview h4 {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gray);
+  margin-bottom: 8px;
+}
+.advance-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 0.82rem;
+}
+.advance-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+.ab-winner  { background: var(--gold); color: var(--navy); }
+.ab-runner  { background: #e6f7ec; color: var(--green); }
+.ab-tie     { background: #fdecea; color: var(--red); }
+
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 400px) {
   .timer-clock { font-size: 2.8rem; }
@@ -606,15 +883,9 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
 </head>
 <body>
 
-<!-- Timer sweep canvas -->
-<canvas id="sweep-canvas"></canvas>
-<!-- Pulsing solid border overlay -->
-<div id="timer-border"></div>
-
 <!-- ── Password / Name Gate ─────────────────────────────────── -->
 <div id="gate">
   <div id="gate-logo">
-    <!-- Olympic rings SVG -->
     <svg width="120" height="52" viewBox="0 0 120 52" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="20" cy="20" r="16" stroke="#0081C8" stroke-width="4" fill="none"/>
       <circle cx="60" cy="20" r="16" stroke="#000000" stroke-width="4" fill="none"/>
@@ -626,53 +897,30 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
   </div>
 
   <div class="gate-card">
-    <!-- Step 1: Password -->
-    <div id="gate-password-step">
+    <!-- Step 1: Name (shown first) -->
+    <div id="gate-name-step">
       <h2>Table Topics Olympics</h2>
-      <p>Enter your access password to join.</p>
+      <p>Enter your name to join the event.</p>
       <div class="form-group">
-        <label for="gate-pwd-input">Password</label>
-        <input type="password" id="gate-pwd-input" placeholder="Enter password" autocomplete="off" />
-        <div class="error-msg hidden" id="gate-pwd-error"></div>
-      </div>
-      <button class="btn btn-primary btn-full" id="gate-pwd-btn">Continue</button>
-    </div>
-
-    <!-- Step 2: Name -->
-    <div id="gate-name-step" class="hidden">
-      <h2>What's your name?</h2>
-      <p>Your name is your unique ID — use the same name to rejoin.</p>
-      <div class="form-group">
-        <label for="gate-name-input">Display Name</label>
+        <label for="gate-name-input">Your Name</label>
         <input type="text" id="gate-name-input" placeholder="e.g. Jane Smith" maxlength="40" autocomplete="off" />
         <div class="error-msg hidden" id="gate-name-error"></div>
       </div>
-      <button class="btn btn-primary btn-full" id="gate-name-btn">Next</button>
+      <button class="btn btn-primary btn-full" id="gate-name-btn">Continue</button>
     </div>
 
-    <!-- Step 3: Role (competitors only, if registration open) -->
-    <div id="gate-role-step" class="hidden">
-      <h2>How will you participate?</h2>
-      <p id="gate-role-subtitle">Choose your role for today's event.</p>
-      <div class="role-grid" id="gate-role-grid">
-        <div class="role-btn" data-role="competitor" id="role-compete">
-          <span>🎤</span>Compete
-        </div>
-        <div class="role-btn" data-role="observer" id="role-observe">
-          <span>👀</span>Observe &amp; Vote
-        </div>
+    <!-- Step 2: Password (shown for unknown names) -->
+    <div id="gate-password-step" class="hidden">
+      <h2 id="gate-pwd-title">Almost there!</h2>
+      <p id="gate-pwd-subtitle">Enter the event password to join.</p>
+      <div class="form-group">
+        <label for="gate-pwd-input">Event Password</label>
+        <input type="password" id="gate-pwd-input" placeholder="Enter password" autocomplete="off" />
+        <div class="error-msg hidden" id="gate-pwd-error"></div>
       </div>
-      <div class="error-msg hidden" id="gate-role-error"></div>
-      <button class="btn btn-gold btn-full mt8" id="gate-role-btn">Join Event</button>
-    </div>
-
-    <!-- Rejoin prompt -->
-    <div id="gate-rejoin-step" class="hidden">
-      <h2>Welcome back!</h2>
-      <p id="rejoin-msg">That name is already registered. Rejoin as <strong id="rejoin-name-label"></strong>?</p>
       <div class="btn-row">
-        <button class="btn btn-primary" id="gate-rejoin-yes">Yes, rejoin</button>
-        <button class="btn btn-outline" id="gate-rejoin-no">Use different name</button>
+        <button class="btn btn-outline btn-sm" id="gate-pwd-back">← Back</button>
+        <button class="btn btn-primary" style="flex:1" id="gate-pwd-btn">Join Event</button>
       </div>
     </div>
   </div>
@@ -699,10 +947,32 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
     </div>
   </header>
 
+  <!-- Phase timeline strip -->
+  <div id="phase-timeline" class="hidden">
+    <div id="phase-steps"></div>
+    <div id="phase-popover" class="hidden">
+      <button id="popover-close">✕</button>
+      <h4 id="popover-title"></h4>
+      <p id="popover-desc"></p>
+      <p id="popover-duration" class="pop-duration hidden"></p>
+    </div>
+  </div>
+
   <!-- Phase badge -->
   <div style="margin: 14px 12px 0;">
     <span class="phase-badge" id="phase-badge">Registration</span>
     <span class="muted" id="phase-label-detail"></span>
+  </div>
+
+  <!-- Opt-out card (registration only, non-admin competitors) -->
+  <div class="card hidden" id="opt-out-wrap">
+    <div id="opt-out-card">
+      <div>
+        <div class="opt-label" id="opt-out-status">Registered as Competitor</div>
+        <div class="opt-hint">You can change this before the draw is locked</div>
+      </div>
+      <button class="btn btn-sm btn-outline" id="opt-out-btn">Watch instead</button>
+    </div>
   </div>
 
   <!-- Current question -->
@@ -713,12 +983,19 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
 
   <!-- Timer card -->
   <div class="card" id="timer-card">
+    <canvas id="timer-canvas"></canvas>
     <h2>Current Speaker</h2>
     <div id="timer-display">
       <div class="timer-clock" id="timer-clock">0:00</div>
       <div class="timer-speaker" id="timer-speaker">No speaker active</div>
       <div>
         <span class="timer-status-pill pill-idle" id="timer-pill">Idle</span>
+      </div>
+      <!-- DQ overlay (shown when stopped and disqualified) -->
+      <div id="dq-overlay" class="hidden">
+        <div class="dq-label">DISQUALIFIED</div>
+        <div class="dq-time" id="dq-time"></div>
+        <button id="dq-override-btn" class="hidden">Override DQ</button>
       </div>
     </div>
   </div>
@@ -741,7 +1018,11 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
   <div class="card" id="bracket-card">
     <h2>Groups &amp; Bracket</h2>
     <div id="bracket-body">
-      <p class="muted">Registration in progress — bracket will appear after draw.</p>
+      <div id="welcome-banner">
+        <div class="trophy">🏆</div>
+        <h3>Welcome to Club 21<br>Table Topics Olympics</h3>
+        <p>The opening ceremony will begin shortly.</p>
+      </div>
     </div>
   </div>
 
@@ -851,6 +1132,34 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
   </div>
 </div>
 
+<!-- Podium overlay -->
+<div id="podium-overlay" class="hidden">
+  <div class="podium-box">
+    <div class="podium-title">🏅 Table Topics Olympics — Results</div>
+    <div class="podium-places">
+      <div class="podium-place second">
+        <div class="place-medal">🥈</div>
+        <div class="place-name" id="podium-2nd">—</div>
+        <div class="place-label">Runner-up</div>
+        <div class="podium-pillar"></div>
+      </div>
+      <div class="podium-place first">
+        <div class="place-medal">🥇</div>
+        <div class="place-name" id="podium-1st">—</div>
+        <div class="place-label">Champion</div>
+        <div class="podium-pillar"></div>
+      </div>
+      <div class="podium-place third">
+        <div class="place-medal">🥉</div>
+        <div class="place-name" id="podium-3rd">—</div>
+        <div class="place-label">3rd Place</div>
+        <div class="podium-pillar"></div>
+      </div>
+    </div>
+    <button class="btn btn-gold" id="podium-close">Close</button>
+  </div>
+</div>
+
 <!-- Wheel overlay -->
 <div id="wheel-overlay" class="hidden">
   <div class="wheel-box">
@@ -866,13 +1175,15 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
 const S = {
   password: '',
   name: '',
-  role: '',       // 'competitor' | 'observer'
+  role: '',
   isAdmin: false,
-  pendingRole: null,
+  _pendingName: '',
+  _nameIsKnown: false,
 
   serverState: null,
   lastVersion: -1,
   pollTimer: null,
+  phases: {},
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -904,107 +1215,108 @@ function formatTime(ms) {
 
 // ── Gate ──────────────────────────────────────────────────────────────────────
 
-qs('#gate-pwd-input').addEventListener('keydown', e => { if (e.key === 'Enter') qs('#gate-pwd-btn').click(); });
-qs('#gate-name-input').addEventListener('keydown', e => { if (e.key === 'Enter') qs('#gate-name-btn').click(); });
-
-qs('#gate-pwd-btn').addEventListener('click', async () => {
-  const pwd = qs('#gate-pwd-input').value.trim();
-  const errEl = qs('#gate-pwd-error');
-  hide(errEl); errEl.textContent = '';
-  if (!pwd) { show(errEl); errEl.textContent = 'Password required.'; return; }
+// Try auto-rejoin from localStorage on page load
+(async function init() {
   try {
-    const res = await api('POST', '/api/auth', { password: pwd });
-    S.password = pwd;
-    S.isAdmin = res.role === 'admin';
-    hide('#gate-password-step');
-    show('#gate-name-step');
-    qs('#gate-name-input').focus();
-  } catch (e) {
-    show(errEl); errEl.textContent = 'Incorrect password.';
+    S.phases = await (await fetch('/api/phases')).json();
+  } catch (_) {}
+
+  const saved = JSON.parse(localStorage.getItem('tm21') || 'null');
+  if (saved && saved.name && saved.password) {
+    try {
+      S.password = saved.password;
+      const auth = await api('POST', '/api/auth', { password: saved.password });
+      S.isAdmin = auth.role === 'admin';
+      const res = await api('POST', '/api/join', { name: saved.name, password: saved.password, rejoin: true });
+      S.name = saved.name;
+      S.role = res.participant.role;
+      enterApp();
+      return;
+    } catch (_) {
+      localStorage.removeItem('tm21');
+      S.password = '';
+    }
   }
-});
+  show('#gate-name-step');
+})();
+
+qs('#gate-name-input').addEventListener('keydown', e => { if (e.key === 'Enter') qs('#gate-name-btn').click(); });
+qs('#gate-pwd-input').addEventListener('keydown', e => { if (e.key === 'Enter') qs('#gate-pwd-btn').click(); });
 
 qs('#gate-name-btn').addEventListener('click', async () => {
   const name = qs('#gate-name-input').value.trim();
   const errEl = qs('#gate-name-error');
-  hide(errEl); errEl.textContent = '';
-  if (!name) { show(errEl); errEl.textContent = 'Name required.'; return; }
+  hide(errEl);
+  if (!name) { show(errEl); errEl.textContent = 'Please enter your name.'; return; }
 
   try {
-    const res = await api('POST', '/api/join', { name, password: S.password });
-    S.name = name;
-    S.role = res.participant.role;
-    if (res.rejoined) {
-      enterApp();
-    } else {
-      // Check if we need role selection
-      const st = await api('GET', '/api/state');
-      const canCompete = st.phase === 'registration' ||
-        st.groups.some(g => g.status === 'pending' && g.members.length < (st.settings.maxPerGroup || 999));
-      if (!canCompete || S.role === 'observer') {
-        // No choice — observer only or already assigned
-        enterApp();
-      } else {
-        hide('#gate-name-step');
-        show('#gate-role-step');
-        // Show/hide compete button based on slots
-        if (!canCompete) {
-          hide('#role-compete');
-          qs('#gate-role-subtitle').textContent = 'All competitor slots filled — you will observe and vote.';
+    const { known } = await (await fetch(`/api/known-name?name=${encodeURIComponent(name)}`)).json();
+    S._pendingName = name;
+    S._nameIsKnown = known;
+
+    if (known) {
+      const saved = JSON.parse(localStorage.getItem('tm21') || 'null');
+      if (saved && saved.password) {
+        // Have a stored password — attempt silent rejoin
+        try {
+          S.password = saved.password;
+          const auth = await api('POST', '/api/auth', { password: saved.password });
+          S.isAdmin = auth.role === 'admin';
+          const res = await api('POST', '/api/join', { name, password: saved.password, rejoin: true });
+          S.name = name;
+          S.role = res.participant.role;
+          enterApp();
+          return;
+        } catch (_) {
+          localStorage.removeItem('tm21');
+          S.password = '';
         }
       }
-    }
-  } catch (e) {
-    if (e.message === 'Name taken') {
-      // Offer rejoin
-      S.name = name;
-      qs('#rejoin-name-label').textContent = name;
-      hide('#gate-name-step');
-      show('#gate-rejoin-step');
+      qs('#gate-pwd-title').textContent = 'Welcome back!';
+      qs('#gate-pwd-subtitle').textContent = `Enter the event password to rejoin as ${name}.`;
     } else {
-      show(errEl); errEl.textContent = e.message;
+      qs('#gate-pwd-title').textContent = 'Almost there!';
+      qs('#gate-pwd-subtitle').textContent = 'Enter the event password to join.';
     }
-  }
-});
-
-// Role selection
-let selectedRole = 'observer';
-qsa('.role-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    qsa('.role-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    selectedRole = btn.dataset.role;
-  });
-});
-// default select observer
-qs('#role-observe').classList.add('selected');
-
-qs('#gate-role-btn').addEventListener('click', async () => {
-  const errEl = qs('#gate-role-error');
-  hide(errEl);
-  try {
-    // Re-join with chosen role
-    await api('POST', '/api/join', { name: S.name, role: selectedRole, password: S.password });
-    S.role = selectedRole;
-    enterApp();
+    hide('#gate-name-step');
+    show('#gate-password-step');
+    qs('#gate-pwd-input').focus();
   } catch (e) {
-    show(errEl); errEl.textContent = e.message;
+    show(errEl); errEl.textContent = 'Could not reach server. Try again.';
   }
 });
 
-qs('#gate-rejoin-yes').addEventListener('click', async () => {
-  try {
-    const res = await api('POST', '/api/join', { name: S.name, rejoin: true, password: S.password });
-    S.role = res.participant.role;
-    enterApp();
-  } catch (e) { alert(e.message); }
-});
-
-qs('#gate-rejoin-no').addEventListener('click', () => {
-  qs('#gate-name-input').value = '';
-  hide('#gate-rejoin-step');
+qs('#gate-pwd-back').addEventListener('click', () => {
+  hide('#gate-password-step');
+  qs('#gate-pwd-input').value = '';
   show('#gate-name-step');
   qs('#gate-name-input').focus();
+});
+
+qs('#gate-pwd-btn').addEventListener('click', async () => {
+  const pwd = qs('#gate-pwd-input').value.trim();
+  const errEl = qs('#gate-pwd-error');
+  hide(errEl);
+  if (!pwd) { show(errEl); errEl.textContent = 'Password required.'; return; }
+
+  try {
+    const auth = await api('POST', '/api/auth', { password: pwd });
+    S.password = pwd;
+    S.isAdmin = auth.role === 'admin';
+    const name = S._pendingName;
+
+    const joinBody = { name, password: pwd, role: 'competitor' };
+    if (S._nameIsKnown) joinBody.rejoin = true;
+    const res = await api('POST', '/api/join', joinBody);
+
+    S.name = name;
+    S.role = res.participant.role;
+    localStorage.setItem('tm21', JSON.stringify({ name, password: pwd }));
+    enterApp();
+  } catch (e) {
+    show(errEl);
+    errEl.textContent = e.message === 'Invalid password' ? 'Incorrect password.' : e.message;
+  }
 });
 
 // ── App entry ─────────────────────────────────────────────────────────────────
@@ -1015,6 +1327,7 @@ function enterApp() {
   setText('#hdr-name', S.name);
   setText('#hdr-role', S.isAdmin ? 'Admin' : S.role === 'competitor' ? 'Competitor' : 'Observer');
   if (S.isAdmin) show('#admin-section');
+  resizeTimerCanvas();
   startPolling();
 }
 
@@ -1033,23 +1346,22 @@ async function poll() {
       S.serverState = st;
       render(st);
     }
-    // Always update timer display (it's time-based)
     updateTimerDisplay(st);
     updateVotingCountdown(st);
     updateTimerBorder(st);
-  } catch (e) {
-    // Network blip — ignore
-  }
+  } catch (_) {}
 }
 
 // ── Main render ───────────────────────────────────────────────────────────────
 
 function render(st) {
   renderPhaseBadge(st);
+  renderPhaseTimeline(st);
   renderQuestion(st);
   renderGroups(st);
   renderVoting(st);
   renderParticipants(st);
+  renderOptOut(st);
   if (S.isAdmin) {
     renderAdminSettings(st);
     renderAdminRoundControl(st);
@@ -1070,6 +1382,130 @@ function renderPhaseBadge(st) {
   setText('#phase-badge', labels[st.phase] || st.phase);
 }
 
+// ── Phase timeline ────────────────────────────────────────────────────────────
+
+const PHASE_ORDER = ['registration', 'group', 'quarter_debate', 'semi_final', 'final'];
+const PHASE_YAML_KEYS = {
+  registration: 'registration',
+  group: 'group_stage',
+  quarter_debate: 'quarter_debate',
+  semi_final: 'semi_final',
+  final: 'final',
+  closed: 'closed',
+};
+let _activePopoverPhase = null;
+
+function renderPhaseTimeline(st) {
+  const container = qs('#phase-timeline');
+  show(container);
+
+  const curIdx = PHASE_ORDER.indexOf(st.phase);
+  const stepsEl = qs('#phase-steps');
+
+  let html = '';
+  PHASE_ORDER.forEach((phase, i) => {
+    const isDone = curIdx > i;
+    const isCurrent = curIdx === i;
+    const label = phaseLabel(phase, st);
+    const cls = isDone ? 'done' : isCurrent ? 'current' : '';
+
+    html += `<div class="phase-step ${cls}" data-phase="${phase}" title="${label}">
+      <div class="phase-dot"></div>
+      <span class="phase-label">${label}</span>
+    </div>`;
+    if (i < PHASE_ORDER.length - 1) {
+      html += `<div class="phase-sep">›</div>`;
+    }
+  });
+  stepsEl.innerHTML = html;
+
+  stepsEl.querySelectorAll('.phase-step').forEach(el => {
+    el.addEventListener('click', () => {
+      const phase = el.dataset.phase;
+      if (_activePopoverPhase === phase) {
+        closePopover();
+        return;
+      }
+      _activePopoverPhase = phase;
+      openPopover(phase, st);
+    });
+  });
+
+  // Re-open popover with fresh data if it was open
+  if (_activePopoverPhase) {
+    openPopover(_activePopoverPhase, st);
+  }
+}
+
+function phaseLabel(phase, st) {
+  if (!st) return phase;
+  const map = {
+    registration: 'Registration',
+    group: st.settings.stageLabels.group_stage,
+    quarter_debate: st.settings.stageLabels.quarter_debate,
+    semi_final: st.settings.stageLabels.semi_final,
+    final: st.settings.stageLabels.final,
+  };
+  return map[phase] || phase;
+}
+
+function openPopover(phase, st) {
+  const popover = qs('#phase-popover');
+  const yamlKey = PHASE_YAML_KEYS[phase] || phase;
+  const info = S.phases[yamlKey] || {};
+
+  setText('#popover-title', info.name || phaseLabel(phase, st));
+  setText('#popover-desc', info.description || '');
+
+  const durEl = qs('#popover-duration');
+  if (S.isAdmin && st) {
+    const dur = estimatePhaseDuration(phase, st);
+    if (dur) {
+      show(durEl);
+      setText(durEl, `Estimated: ~${dur}`);
+    } else {
+      hide(durEl);
+    }
+  } else {
+    hide(durEl);
+  }
+
+  show(popover);
+}
+
+function closePopover() {
+  _activePopoverPhase = null;
+  hide('#phase-popover');
+}
+
+qs('#popover-close').addEventListener('click', closePopover);
+
+function estimatePhaseDuration(phase, st) {
+  const s = st.settings;
+  const speakTime = (s.redEnd + 30) / 60; // minutes per speaker (speech + overhead)
+  const brk = s.breakMinutes || 0;
+
+  if (phase === 'group') {
+    const groups = s.numGroups || 5;
+    const perGroup = s.maxPerGroup || 4;
+    const total = Math.round(groups * perGroup * speakTime + groups * brk);
+    return `${total} min`;
+  }
+  if (phase === 'quarter_debate') {
+    const total = Math.round(8 * speakTime + brk);
+    return `${total} min`;
+  }
+  if (phase === 'semi_final') {
+    const total = Math.round(4 * speakTime + brk);
+    return `${total} min`;
+  }
+  if (phase === 'final') {
+    const total = Math.round(2 * speakTime);
+    return `${total} min`;
+  }
+  return null;
+}
+
 function renderQuestion(st) {
   if (st.currentQuestion) {
     show('#question-display');
@@ -1080,21 +1516,59 @@ function renderQuestion(st) {
   }
 }
 
-// ── Timer display (runs every poll + every second via requestAnimationFrame) ──
+// ── Opt-out toggle ────────────────────────────────────────────────────────────
 
-let _rafTimer = null;
+function renderOptOut(st) {
+  const wrap = qs('#opt-out-wrap');
+  if (st.phase !== 'registration' || S.isAdmin) { hide(wrap); return; }
+
+  // Find my current role from server state
+  const me = st.participants.find(p => p.name === S.name);
+  if (!me) { hide(wrap); return; }
+
+  show(wrap);
+  if (me.role === 'competitor') {
+    setText('#opt-out-status', 'Registered as Competitor');
+    setText('#opt-out-btn', 'Watch instead');
+  } else {
+    setText('#opt-out-status', 'Registered as Observer');
+    setText('#opt-out-btn', 'I want to compete!');
+  }
+}
+
+qs('#opt-out-btn').addEventListener('click', async () => {
+  const me = S.serverState?.participants.find(p => p.name === S.name);
+  if (!me) return;
+  const newRole = me.role === 'competitor' ? 'observer' : 'competitor';
+  const verb = newRole === 'observer' ? 'watch as an observer' : 'compete';
+  if (!confirm(`Switch to ${verb}?`)) return;
+  try {
+    const res = await api('POST', '/api/self-opt', { name: S.name, role: newRole });
+    S.role = res.role;
+    setText('#hdr-role', S.role === 'competitor' ? 'Competitor' : 'Observer');
+    const st = await api('GET', '/api/state');
+    S.serverState = st;
+    S.lastVersion = st.version;
+    render(st);
+  } catch (e) { alert(e.message); }
+});
+
+// ── Timer display ─────────────────────────────────────────────────────────────
 
 function updateTimerDisplay(st) {
   const cs = st.currentSpeaker;
   const clockEl = qs('#timer-clock');
   const speakerEl = qs('#timer-speaker');
   const pillEl = qs('#timer-pill');
+  const dqOverlay = qs('#dq-overlay');
+  const dqOverrideBtn = qs('#dq-override-btn');
 
   if (!cs || cs.timerState === 'idle') {
     setText(clockEl, '0:00');
     setText(speakerEl, 'No speaker active');
     pillEl.className = 'timer-status-pill pill-idle';
     setText(pillEl, 'Idle');
+    hide(dqOverlay);
     return;
   }
 
@@ -1108,9 +1582,23 @@ function updateTimerDisplay(st) {
   if (cs.timerState === 'running') {
     pillEl.className = 'timer-status-pill pill-running';
     setText(pillEl, 'Running');
+    hide(dqOverlay);
   } else {
     pillEl.className = 'timer-status-pill pill-stopped';
     setText(pillEl, 'Stopped');
+
+    if (cs.disqualified) {
+      show(dqOverlay);
+      setText('#dq-time', formatTime(elapsed));
+      if (S.isAdmin) {
+        show(dqOverrideBtn);
+        dqOverrideBtn.onclick = () => adminOverrideDQ(cs.name);
+      } else {
+        hide(dqOverrideBtn);
+      }
+    } else {
+      hide(dqOverlay);
+    }
   }
 }
 
@@ -1123,18 +1611,77 @@ function updateVotingCountdown(st) {
   setText(el, `Voting closes in ${Math.ceil(remaining)}s`);
 }
 
-// ── Timer border / sweep ──────────────────────────────────────────────────────
+// ── Timer border (scoped to timer card) ───────────────────────────────────────
 
-const sweepCanvas = qs('#sweep-canvas');
-const sweepCtx = sweepCanvas.getContext('2d');
-const timerBorderEl = qs('#timer-border');
+const timerCard = qs('#timer-card');
+const timerCanvas = qs('#timer-canvas');
+const timerCtx = timerCanvas.getContext('2d');
+
+function resizeTimerCanvas() {
+  timerCanvas.width = timerCard.offsetWidth;
+  timerCanvas.height = timerCard.offsetHeight;
+}
+window.addEventListener('resize', resizeTimerCanvas);
+
+function clearTimerCanvas() {
+  timerCtx.clearRect(0, 0, timerCanvas.width, timerCanvas.height);
+}
+
+function drawTimerBorder(color, fraction) {
+  const w = timerCanvas.width;
+  const h = timerCanvas.height;
+  clearTimerCanvas();
+  if (fraction <= 0 || w === 0 || h === 0) return;
+
+  const bw = 5;
+  const perim = 2 * (w + h);
+  const fillLen = fraction * perim;
+
+  timerCtx.strokeStyle = color;
+  timerCtx.lineWidth = bw;
+  timerCtx.lineCap = 'square';
+  timerCtx.beginPath();
+
+  const segments = [
+    [[bw / 2, bw / 2], [w - bw / 2, bw / 2]],
+    [[w - bw / 2, bw / 2], [w - bw / 2, h - bw / 2]],
+    [[w - bw / 2, h - bw / 2], [bw / 2, h - bw / 2]],
+    [[bw / 2, h - bw / 2], [bw / 2, bw / 2]],
+  ];
+
+  let drawn = 0;
+  let started = false;
+  for (const [[x1, y1], [x2, y2]] of segments) {
+    if (drawn >= fillLen) break;
+    const segLen = Math.hypot(x2 - x1, y2 - y1);
+    const canDraw = Math.min(segLen, fillLen - drawn);
+    const t = canDraw / segLen;
+    const ex = x1 + (x2 - x1) * t;
+    const ey = y1 + (y2 - y1) * t;
+    if (!started) { timerCtx.moveTo(x1, y1); started = true; }
+    timerCtx.lineTo(ex, ey);
+    drawn += canDraw;
+  }
+  timerCtx.stroke();
+}
+
+function setTimerFlash(cls) {
+  timerCard.className = 'card';
+  if (cls) timerCard.classList.add(cls);
+}
 
 function updateTimerBorder(st) {
   const cs = st.currentSpeaker;
-  timerBorderEl.className = '';
 
   if (!cs || cs.timerState === 'idle' || !cs.startTime) {
-    clearSweep();
+    setTimerFlash(null);
+    clearTimerCanvas();
+    return;
+  }
+
+  if (cs.timerState === 'stopped') {
+    setTimerFlash(null);
+    clearTimerCanvas();
     return;
   }
 
@@ -1144,89 +1691,39 @@ function updateTimerBorder(st) {
   const yel = st.settings.yellowEnd;
   const red = st.settings.redEnd;
 
-  if (elapsedS < sil) {
-    clearSweep();
-    return;
-  }
+  clearTimerCanvas();
 
-  if (elapsedS >= red) {
-    clearSweep();
-    timerBorderEl.classList.add('border-black');
-    return;
-  }
-
-  // Determine color and sweep fraction
-  let color, sweepStart, sweepEnd, fraction;
-
-  if (elapsedS < grn) {
-    color = '#2E7D32';
-    sweepStart = sil; sweepEnd = grn;
+  if (elapsedS < sil - 5) {
+    // Pre-minimum DQ zone — flash light grey
+    setTimerFlash('flash-grey');
+  } else if (elapsedS < sil) {
+    // 5s window approaching minimum — flash green
+    setTimerFlash('flash-green');
+  } else if (elapsedS < grn) {
+    // Green phase — full border strips away
+    setTimerFlash(null);
+    const progress = (elapsedS - sil) / (grn - sil);
+    drawTimerBorder('#2E7D32', 1 - progress);
   } else if (elapsedS < yel) {
-    color = '#F9A825';
-    sweepStart = grn; sweepEnd = yel;
+    // Yellow phase — full border strips away
+    setTimerFlash(null);
+    const progress = (elapsedS - grn) / (yel - grn);
+    drawTimerBorder('#F9A825', 1 - progress);
+  } else if (elapsedS < red) {
+    // Red phase — full border strips away
+    setTimerFlash(null);
+    const progress = (elapsedS - yel) / (red - yel);
+    drawTimerBorder('#BF0A30', 1 - progress);
+  } else if (elapsedS < red + 5) {
+    // 5s grace window after cutoff — flash red
+    setTimerFlash('flash-red');
   } else {
-    color = '#BF0A30';
-    sweepStart = yel; sweepEnd = red;
+    // Beyond DQ zone — flash black
+    setTimerFlash('flash-black');
   }
-
-  fraction = Math.min(1, (elapsedS - sweepStart) / (sweepEnd - sweepStart));
-  drawSweep(color, fraction);
 }
 
-function clearSweep() {
-  sweepCtx.clearRect(0, 0, sweepCanvas.width, sweepCanvas.height);
-}
-
-function resizeSweepCanvas() {
-  sweepCanvas.width = window.innerWidth;
-  sweepCanvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resizeSweepCanvas);
-resizeSweepCanvas();
-
-function drawSweep(color, fraction) {
-  const w = sweepCanvas.width;
-  const h = sweepCanvas.height;
-  sweepCtx.clearRect(0, 0, w, h);
-
-  const bw = 6; // border width
-  // Perimeter: top, right, bottom, left
-  const perim = 2 * (w + h - 4 * bw);
-  const fillLen = fraction * perim;
-
-  sweepCtx.strokeStyle = color;
-  sweepCtx.lineWidth = bw;
-  sweepCtx.lineCap = 'square';
-  sweepCtx.beginPath();
-
-  // Start at top-left, go clockwise
-  // Segments: top → right → bottom → left
-  const segments = [
-    [[bw, bw / 2], [w - bw, bw / 2]],              // top
-    [[w - bw / 2, bw], [w - bw / 2, h - bw]],      // right
-    [[w - bw, h - bw / 2], [bw, h - bw / 2]],      // bottom
-    [[bw / 2, h - bw], [bw / 2, bw]],               // left
-  ];
-
-  let drawn = 0;
-  let started = false;
-
-  for (const [[x1, y1], [x2, y2]] of segments) {
-    const len = Math.hypot(x2 - x1, y2 - y1);
-    if (drawn >= fillLen) break;
-    const canDraw = Math.min(len, fillLen - drawn);
-    const t = canDraw / len;
-    const ex = x1 + (x2 - x1) * t;
-    const ey = y1 + (y2 - y1) * t;
-    if (!started) { sweepCtx.moveTo(x1, y1); started = true; }
-    sweepCtx.lineTo(ex, ey);
-    drawn += canDraw;
-  }
-
-  sweepCtx.stroke();
-}
-
-// RAF loop for smooth timer + sweep
+// RAF loop for smooth timer + border
 (function rafLoop() {
   const st = S.serverState;
   if (st) {
@@ -1241,69 +1738,163 @@ function drawSweep(color, fraction) {
 
 function renderGroups(st) {
   const body = qs('#bracket-body');
+
+  // Podium display
+  if (st.bracket.champion) {
+    const fr = st.bracket.final_result || {};
+    setText('#podium-1st', st.bracket.champion || '—');
+    setText('#podium-2nd', fr.loser || '—');
+    setText('#podium-3rd', st.bracket.third_place || '—');
+  }
+
   if (!st.groups || st.groups.length === 0) {
-    body.innerHTML = '<p class="muted">Registration in progress — bracket will appear after draw.</p>';
+    body.innerHTML = `<div id="welcome-banner">
+      <div class="trophy">🏆</div>
+      <h3>Welcome to Club 21<br>Table Topics Olympics</h3>
+      <p>The opening ceremony will begin shortly.</p>
+    </div>`;
     return;
   }
 
   let html = '';
 
-  // Group phase
-  html += `<p class="phase-badge">${st.settings.stageLabels.group_stage}</p>`;
-  st.groups.forEach((g, i) => {
-    const active = st.currentSpeaker && st.currentSpeaker.groupId === g.id;
-    html += `<div class="group-card ${g.status === 'done' ? 'done' : ''} ${active ? 'active' : ''}">
-      <div class="group-title">Group ${i + 1} <span style="font-weight:400;color:var(--gray)">(${g.status})</span></div>
-      <ul class="member-list">`;
-
-    const order = g.performanceOrder.length > 0 ? g.performanceOrder : g.members;
-    order.forEach(name => {
-      const isCurrent = st.currentSpeaker && st.currentSpeaker.name === name;
-      html += `<li class="member-chip ${isCurrent ? 'current' : ''}">${name}</li>`;
+  // ── Group Stage ──
+  if (st.phase === 'group' || st.bracket.group_results.length > 0) {
+    html += `<p class="phase-badge">${st.settings.stageLabels.group_stage}</p>`;
+    st.groups.forEach((g, i) => {
+      const active = st.currentSpeaker && st.currentSpeaker.groupId === g.id;
+      const result = st.bracket.group_results.find(r => r.groupId === g.id);
+      html += `<div class="group-card ${g.status === 'done' ? 'done' : ''} ${active ? 'active' : ''}">
+        <div class="group-title">Group ${i + 1} <span style="font-weight:400;color:var(--gray)">(${g.status})</span></div>
+        <ul class="member-list">`;
+      const order = g.performanceOrder.length > 0 ? g.performanceOrder : g.members;
+      order.forEach(name => {
+        const isCurrent = st.currentSpeaker && st.currentSpeaker.name === name;
+        const isDq = st.disqualifiedSpeakers && st.disqualifiedSpeakers.includes(name);
+        const isWinner = result && result.winner === name;
+        html += `<li class="member-chip ${isCurrent ? 'current' : ''} ${isDq ? 'dq' : ''}">${name}${isDq ? ' ✕' : isWinner ? ' 🏅' : ''}</li>`;
+      });
+      html += `</ul>`;
+      if (result) {
+        html += `<div style="margin-top:6px;font-size:0.78rem;color:var(--gray);">
+          Winner: <strong style="color:var(--navy)">${result.winner || '—'}</strong>
+          ${result.runner_up ? `&nbsp;· Runner-up: <strong>${result.runner_up}</strong> (${result.runner_up_votes} votes)` : ''}
+        </div>`;
+      }
+      if (S.isAdmin && g.status === 'pending') {
+        html += `<div class="btn-row" style="margin-top:8px;">
+          <button class="btn btn-sm btn-outline" onclick="adminSpinWheel(${g.id})">🎡 Spin Order</button>
+          <button class="btn btn-sm btn-primary" onclick="adminSetActiveGroup(${g.id})">▶ Activate</button>
+        </div>`;
+      }
+      if (S.isAdmin && g.status !== 'done') {
+        html += `<div style="margin-top:6px;">
+          <input type="text" id="winner-${g.id}" placeholder="Override winner name" style="width:160px;padding:5px 8px;font-size:0.82rem;border:1.5px solid #ccc;border-radius:5px;" />
+          <button class="btn btn-sm btn-green" onclick="adminCompleteGroup(${g.id})">✓ Complete</button>
+        </div>`;
+      }
+      html += `</div>`;
     });
-    html += `</ul>`;
-    if (S.isAdmin && g.status === 'pending') {
-      html += `<div class="btn-row" style="margin-top:8px;">
-        <button class="btn btn-sm btn-outline" onclick="adminSpinWheel(${g.id})">🎡 Spin Order</button>
-        <button class="btn btn-sm btn-primary" onclick="adminSetActiveGroup(${g.id})">▶ Activate</button>
-      </div>`;
-    }
-    if (S.isAdmin && g.status !== 'done') {
-      html += `<div style="margin-top:6px;">
-        <input type="text" id="winner-${g.id}" placeholder="Winner name" style="width:140px;padding:5px 8px;font-size:0.82rem;border:1.5px solid #ccc;border-radius:5px;" />
-        <button class="btn btn-sm btn-green" onclick="adminCompleteGroup(${g.id})">✓ Complete</button>
-      </div>`;
-    }
-    html += `</div>`;
-  });
 
-  // Quarter teams
-  if (st.bracket.quarter_teams && st.bracket.quarter_teams.length > 0) {
+    // Advancement preview when all groups done and still in group phase
+    if (st.phase === 'group') {
+      const allDone = st.groups.every(g => g.status === 'done');
+      if (allDone && st.bracket.group_results.length === st.groups.length) {
+        html += renderAdvancementPreview(st);
+      }
+    }
+  }
+
+  // ── Quarter-Debate ──
+  if (st.bracket.quarter_groups && (st.bracket.quarter_groups[0].length > 0 || st.bracket.quarter_groups[1].length > 0)) {
     html += `<p class="phase-badge" style="margin-top:12px;">${st.settings.stageLabels.quarter_debate}</p>`;
-    st.bracket.quarter_teams.forEach((team, i) => {
-      html += `<div class="group-card">
-        <div class="group-title">Match ${i + 1}</div>
-        <ul class="member-list">${team.map(n => `<li class="member-chip">${n}</li>`).join('')}</ul>
+    ['Group A', 'Group B'].forEach((label, gi) => {
+      const members = st.bracket.quarter_groups[gi] || [];
+      const spoken = st.bracket.quarter_spoken || [];
+      const cls = gi === 0 ? 'group-a' : 'group-b';
+      html += `<div class="debate-group ${cls}">
+        <div class="debate-group-title">${label}</div>
+        <div>`;
+      members.forEach(name => {
+        const hasSpoken = spoken.includes(name);
+        const isSpeaking = st.currentSpeaker && st.currentSpeaker.name === name;
+        html += `<span class="speaker-chip ${isSpeaking ? 'speaking' : hasSpoken ? 'spoken' : ''}">${hasSpoken ? '✓ ' : isSpeaking ? '🎤 ' : ''}${name}</span>`;
+      });
+      html += `</div></div>`;
+    });
+    if (st.bracket.quarter_winner_idx !== null) {
+      const winnerLabel = st.bracket.quarter_winner_idx === 0 ? 'Group A' : 'Group B';
+      html += `<div style="margin-top:8px;font-size:0.85rem;font-weight:700;color:var(--green);">${winnerLabel} advances to Semifinal ✓</div>`;
+    }
+  }
+
+  // ── Semifinal ──
+  if (st.bracket.semi_pairs && st.bracket.semi_pairs.length > 0) {
+    html += `<p class="phase-badge" style="margin-top:12px;">${st.settings.stageLabels.semi_final}</p>`;
+    st.bracket.semi_pairs.forEach((pair, i) => {
+      const result = st.bracket.semi_results.find(r => r.pairIdx === i);
+      const spoken = (st.bracket.semi_spoken && st.bracket.semi_spoken[i]) || [];
+      const isSpeaking0 = st.currentSpeaker && st.currentSpeaker.name === pair[0];
+      const isSpeaking1 = st.currentSpeaker && st.currentSpeaker.name === pair[1];
+      html += `<div class="matchup-card ${result ? 'done' : (isSpeaking0 || isSpeaking1 ? 'active' : '')}">
+        <div>
+          <div class="matchup-name" style="${result && result.winner === pair[0] ? 'color:var(--green)' : ''}">${isSpeaking0 ? '🎤 ' : spoken.includes(pair[0]) ? '✓ ' : ''}${pair[0] || '?'}</div>
+          ${result && result.winner === pair[0] ? '<div class="matchup-winner">Winner ✓</div>' : ''}
+        </div>
+        <div class="matchup-vs">vs</div>
+        <div>
+          <div class="matchup-name" style="${result && result.winner === pair[1] ? 'color:var(--green)' : ''}">${isSpeaking1 ? '🎤 ' : spoken.includes(pair[1]) ? '✓ ' : ''}${pair[1] || '?'}</div>
+          ${result && result.winner === pair[1] ? '<div class="matchup-winner">Winner ✓</div>' : ''}
+        </div>
       </div>`;
     });
   }
 
-  // Semi / Final bracket slots
-  if (st.bracket.semi_winners && st.bracket.semi_winners.length > 0) {
-    html += `<p class="phase-badge" style="margin-top:12px;">${st.settings.stageLabels.semi_final}</p>`;
-    html += '<div class="bracket-grid">';
-    st.bracket.semi_winners.forEach(w => {
-      html += `<div class="bracket-slot winner"><div class="slot-label">Finalist</div><div class="slot-name">${w}</div></div>`;
-    });
-    html += '</div>';
-  }
-
-  if (st.bracket.finalist) {
+  // ── Final ──
+  if (st.bracket.finalists && st.bracket.finalists.length > 0) {
     html += `<p class="phase-badge" style="margin-top:12px;background:var(--gold-dark);">${st.settings.stageLabels.final} 🏆</p>`;
-    html += `<div class="bracket-slot winner" style="margin-top:8px;"><div class="slot-label">Champion</div><div class="slot-name">${st.bracket.finalist}</div></div>`;
+    html += `<div class="matchup-card ${st.bracket.champion ? 'done' : ''}">`;
+    st.bracket.finalists.forEach((name, i) => {
+      const isSpeaking = st.currentSpeaker && st.currentSpeaker.name === name;
+      const isChamp = st.bracket.champion === name;
+      if (i === 1) html += `<div class="matchup-vs">vs</div>`;
+      html += `<div>
+        <div class="matchup-name" style="${isChamp ? 'color:var(--gold-dark)' : ''}">${isSpeaking ? '🎤 ' : ''}${name}</div>
+        ${isChamp ? '<div class="matchup-winner" style="color:var(--gold-dark)">Champion 🏆</div>' : ''}
+      </div>`;
+    });
+    html += `</div>`;
   }
 
   body.innerHTML = html;
+}
+
+function renderAdvancementPreview(st) {
+  const results = st.bracket.group_results;
+  const winners = results.map(r => r.winner).filter(Boolean);
+  const runnersUp = results
+    .filter(r => r.runner_up)
+    .map(r => ({ name: r.runner_up, votes: r.runner_up_votes }))
+    .sort((a, b) => b.votes - a.votes);
+  const needed = Math.max(0, 8 - winners.length);
+
+  let html = `<div class="advancement-preview"><h4>Quarter-Debate Advancement (8 spots)</h4>`;
+  winners.forEach(name => {
+    html += `<div class="advance-row"><span class="advance-badge ab-winner">Winner</span>${name}</div>`;
+  });
+  runnersUp.forEach((r, i) => {
+    const advancing = i < needed;
+    const isEdge = i === needed - 1 && needed > 0;
+    const nextTied = runnersUp[i + 1] && runnersUp[i + 1].votes === r.votes;
+    const tie = isEdge && nextTied;
+    html += `<div class="advance-row">
+      <span class="advance-badge ${advancing ? (tie ? 'ab-tie' : 'ab-runner') : ''}" style="${!advancing ? 'background:var(--gray-light);color:var(--gray)' : ''}">
+        Runner-up · ${r.votes}v
+      </span>${r.name}${tie ? ' ⚠ Tie' : !advancing ? ' (out)' : ''}
+    </div>`;
+  });
+  html += `<div style="margin-top:8px;font-size:0.78rem;color:var(--gray);">${Math.min(8, winners.length + needed)} / 8 spots filled</div></div>`;
+  return html;
 }
 
 // ── Voting ────────────────────────────────────────────────────────────────────
@@ -1322,7 +1913,6 @@ function renderVoting(st) {
   if (v.active) {
     hide(resultsDiv);
 
-    // Progress
     const totalVotes = Object.keys(v.votes).length;
     const eligible = v.eligibleVoters.length;
     const pct = eligible > 0 ? (totalVotes / eligible) * 100 : 0;
@@ -1330,7 +1920,6 @@ function renderVoting(st) {
     qs('#vote-progress-bar').style.width = pct + '%';
     setText('#vote-progress-label', `${totalVotes} / ${eligible} votes cast`);
 
-    // Vote buttons (for eligible voters)
     const isEligible = v.eligibleVoters.includes(S.name);
     const myVote = v.votes[S.name];
 
@@ -1363,7 +1952,6 @@ function renderVoting(st) {
       </div>`;
     });
 
-    // Tiebreak
     if (winners.length > 1 && S.isAdmin && !v.tiebreakAdminVoteUsed) {
       html += `<hr class="divider"/><p class="muted">Tie detected. Use tiebreak:</p>
       <div class="btn-row" id="tiebreak-btns">
@@ -1378,7 +1966,6 @@ function renderVoting(st) {
 async function castVote(candidateName) {
   try {
     await api('POST', '/api/vote', { voterName: S.name, candidateName });
-    // Force poll
     const st = await api('GET', '/api/state');
     S.serverState = st;
     S.lastVersion = st.version;
@@ -1400,7 +1987,9 @@ function renderParticipants(st) {
         ? `<span class="participant-role-badge badge-competitor">Competitor</span>`
         : `<span class="participant-role-badge badge-observer">Observer</span>`;
     const groupLabel = p.groupIndex != null ? ` · Group ${p.groupIndex + 1}` : '';
-    return `<div class="participant-row">${badge}<span>${p.name}${groupLabel}</span></div>`;
+    const dqMark = st.disqualifiedSpeakers && st.disqualifiedSpeakers.includes(p.name)
+      ? ` <span style="color:var(--red);font-size:0.75rem;">(DQ)</span>` : '';
+    return `<div class="participant-row">${badge}<span>${p.name}${groupLabel}</span>${dqMark}</div>`;
   }).join('');
 }
 
@@ -1450,16 +2039,15 @@ qs('#admin-lock-draw').addEventListener('click', async () => {
 function renderAdminLateAlerts(st) {
   if (st.phase === 'registration') { qs('#admin-late-alerts').innerHTML = ''; return; }
   const lateArrivals = st.participants.filter(p =>
-    p.role === 'observer' && !p.groupIndex && st.phase === 'group' &&
+    p.role === 'observer' && p.groupIndex == null && st.phase === 'group' &&
     st.groups.some(g => g.status === 'pending')
   );
-  // Only show newly-joined (after draw locked, no group)
   const alerts = qs('#admin-late-alerts');
   const pendingGroups = st.groups.filter(g => g.status === 'pending');
   if (lateArrivals.length === 0 || pendingGroups.length === 0) { alerts.innerHTML = ''; return; }
 
   alerts.innerHTML = lateArrivals.map(p => {
-    const opts = pendingGroups.map((g, i) => `<option value="${g.id}">Group ${g.id + 1}</option>`).join('');
+    const opts = pendingGroups.map(g => `<option value="${g.id}">Group ${g.id + 1}</option>`).join('');
     return `<div class="late-alert">
       <span>⚠ Late arrival: <strong>${p.name}</strong></span>
       <div style="display:flex;gap:6px;align-items:center;">
@@ -1480,51 +2068,128 @@ async function adminAssignLate(name) {
 
 // ── Admin round control ───────────────────────────────────────────────────────
 
+function timerControls() {
+  return `<div class="btn-row">
+    <button class="btn btn-green btn-sm" onclick="adminTimer('start')">▶ Start</button>
+    <button class="btn btn-outline btn-sm" onclick="adminTimer('stop')">⏸ Stop</button>
+    <button class="btn btn-outline btn-sm" onclick="adminTimer('restart')">↺ Restart</button>
+    <button class="btn btn-outline btn-sm" onclick="adminAdvance('next-speaker')">⏭ Next</button>
+  </div>`;
+}
+
+function dqSection(st) {
+  const dqList = st.disqualifiedSpeakers || [];
+  if (!dqList.length) return '';
+  return `<hr class="divider" /><div style="font-size:0.8rem;font-weight:700;color:var(--red);margin-bottom:4px;">Disqualified</div>` +
+    dqList.map(name => `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+      <span style="font-size:0.82rem;">${name}</span>
+      <button class="btn btn-sm btn-outline" onclick="adminOverrideDQ('${name}')">Override</button>
+    </div>`).join('');
+}
+
 function renderAdminRoundControl(st) {
   const body = qs('#admin-round-body');
+
   if (!st.groups || st.groups.length === 0) {
     body.innerHTML = '<p class="muted">Draw must be locked to control rounds.</p>';
     return;
   }
 
-  const cs = st.currentSpeaker;
-  const activeGroup = st.groups.find(g => g.status === 'active');
-  const candidates = activeGroup ? activeGroup.members : [];
-  const speakerQueue = activeGroup ? (activeGroup.performanceOrder.length > 0 ? activeGroup.performanceOrder : activeGroup.members) : [];
-
   let html = '';
 
-  // Question draw
-  html += `<button class="btn btn-primary" onclick="adminDrawQuestion()">🎲 Draw Question</button>`;
+  // ── Group phase ──
+  if (st.phase === 'group') {
+    const activeGroup = st.groups.find(g => g.status === 'active');
+    const speakerQueue = activeGroup
+      ? (activeGroup.performanceOrder.length > 0 ? activeGroup.performanceOrder : activeGroup.members)
+      : [];
 
-  // Timer controls
-  html += `<hr class="divider" /><div><strong>Timer</strong></div>`;
-  html += `<div class="btn-row">
-    <button class="btn btn-green btn-sm" onclick="adminTimer('start')">▶ Start</button>
-    <button class="btn btn-outline btn-sm" onclick="adminTimer('stop')">⏸ Stop</button>
-    <button class="btn btn-outline btn-sm" onclick="adminTimer('restart')">↺ Restart</button>
-  </div>`;
-
-  // Speaker selection
-  if (speakerQueue.length > 0) {
-    html += `<div style="margin-top:10px;"><strong>Set Speaker</strong></div>
-    <div class="btn-row">
-      ${speakerQueue.map(n => `<button class="btn btn-sm btn-outline" onclick="adminSetSpeaker('${n}', ${activeGroup?.id ?? 0})">${n}</button>`).join('')}
-    </div>`;
+    html += `<button class="btn btn-primary btn-sm" onclick="adminDrawQuestion()">🎲 Draw Question</button>`;
+    html += `<hr class="divider" />${timerControls()}`;
+    if (speakerQueue.length > 0) {
+      html += `<div style="margin-top:8px;font-size:0.82rem;font-weight:700;">Set Speaker</div>
+      <div class="btn-row">${speakerQueue.map(n =>
+        `<button class="btn btn-sm btn-outline" onclick="adminSetSpeaker('${n}',${activeGroup?.id ?? 0})">${n}</button>`
+      ).join('')}</div>`;
+    }
+    html += dqSection(st);
   }
 
-  html += `<hr class="divider" />
-    <div class="btn-row">
-      <button class="btn btn-sm btn-outline" onclick="adminAdvance('next-speaker')">Next Speaker</button>
-    </div>`;
+  // ── Quarter-Debate phase ──
+  else if (st.phase === 'quarter_debate') {
+    const spoken = st.bracket.quarter_spoken || [];
+    const allMembers = [...(st.bracket.quarter_groups[0] || []), ...(st.bracket.quarter_groups[1] || [])];
+    const remaining = allMembers.filter(n => !spoken.includes(n) && !(st.currentSpeaker && st.currentSpeaker.name === n));
+    const allSpoken = allMembers.length > 0 && allMembers.every(n => spoken.includes(n) || (st.currentSpeaker && st.currentSpeaker.name === n && st.currentSpeaker.timerState === 'stopped'));
+
+    html += `<button class="btn btn-primary btn-sm" onclick="adminDrawQuestion()">🎲 Draw Question</button>`;
+    html += `<hr class="divider" />${timerControls()}`;
+
+    if (remaining.length > 0) {
+      html += `<div style="margin-top:8px;font-size:0.82rem;font-weight:700;">Select Next Speaker</div><div class="btn-row">`;
+      [0, 1].forEach(gi => {
+        const groupLabel = gi === 0 ? 'A' : 'B';
+        (st.bracket.quarter_groups[gi] || []).forEach(name => {
+          if (!spoken.includes(name) && !(st.currentSpeaker && st.currentSpeaker.name === name)) {
+            html += `<button class="btn btn-sm btn-outline" onclick="adminSetSpeaker('${name}',${gi})" style="border-color:${gi===0?'#0081C8':'#EE334E'}">${groupLabel}: ${name}</button>`;
+          }
+        });
+      });
+      html += `</div>`;
+    }
+
+    const allActuallySpoken = spoken.length === allMembers.length;
+    if (allActuallySpoken) {
+      html += `<hr class="divider" /><p class="muted" style="margin-bottom:6px;">All ${allMembers.length} speakers done — open group voting.</p>`;
+    }
+    html += dqSection(st);
+  }
+
+  // ── Semifinal phase ──
+  else if (st.phase === 'semi_final') {
+    const pairs = st.bracket.semi_pairs || [];
+    const completedPairs = (st.bracket.semi_results || []).map(r => r.pairIdx);
+    const activePairIdx = pairs.findIndex((pair, i) => !completedPairs.includes(i));
+
+    if (activePairIdx === -1) {
+      html += `<p class="muted">Both matchups complete — advance to Final.</p>`;
+    } else {
+      const pair = pairs[activePairIdx];
+      const spoken = (st.bracket.semi_spoken && st.bracket.semi_spoken[activePairIdx]) || [];
+      html += `<div style="font-size:0.85rem;font-weight:700;margin-bottom:6px;">Active Matchup ${activePairIdx + 1}: ${pair[0]} vs ${pair[1]}</div>`;
+      html += `<button class="btn btn-primary btn-sm" onclick="adminDrawQuestion()">🎲 Draw Question</button>`;
+      html += `<hr class="divider" />${timerControls()}`;
+      html += `<div style="margin-top:8px;font-size:0.82rem;font-weight:700;">Select Speaker</div><div class="btn-row">`;
+      pair.forEach(name => {
+        const hasSpoken = spoken.includes(name);
+        html += `<button class="btn btn-sm btn-outline ${hasSpoken ? '' : ''}" ${hasSpoken ? 'style="opacity:0.5"' : ''} onclick="adminSetSpeaker('${name}',${activePairIdx})">${hasSpoken ? '✓ ' : ''}${name}</button>`;
+      });
+      html += `</div>`;
+    }
+    html += dqSection(st);
+  }
+
+  // ── Final phase ──
+  else if (st.phase === 'final') {
+    const finalists = st.bracket.finalists || [];
+    html += `<button class="btn btn-primary btn-sm" onclick="adminDrawQuestion()">🎲 Draw Question</button>`;
+    html += `<hr class="divider" />${timerControls()}`;
+    if (finalists.length > 0) {
+      html += `<div style="margin-top:8px;font-size:0.82rem;font-weight:700;">Select Finalist</div><div class="btn-row">`;
+      finalists.forEach(name => {
+        html += `<button class="btn btn-sm btn-outline" onclick="adminSetSpeaker('${name}',0)">${name}</button>`;
+      });
+      html += `</div>`;
+    }
+    html += dqSection(st);
+  }
 
   body.innerHTML = html;
 }
 
 async function adminDrawQuestion() {
   try {
-    const res = await api('POST', '/api/admin/draw-question', {});
-    // Question will appear in next poll
+    await api('POST', '/api/admin/draw-question', {});
   } catch (e) { alert(e.message); }
 }
 
@@ -1543,10 +2208,14 @@ async function adminSetSpeaker(name, groupId) {
 
 async function adminSetActiveGroup(groupId) {
   try {
-    const st = S.serverState;
-    const group = st.groups.find(g => g.id === groupId);
-    if (group) group.status = 'active';
     await api('POST', '/api/admin/timer', { action: 'set-speaker', speakerName: null, groupId });
+  } catch (e) { alert(e.message); }
+}
+
+async function adminOverrideDQ(name) {
+  if (!confirm(`Override disqualification for ${name}? They will become eligible for voting again.`)) return;
+  try {
+    await api('POST', '/api/admin/override-dq', { name });
   } catch (e) { alert(e.message); }
 }
 
@@ -1563,7 +2232,6 @@ async function adminSpinWheel(groupId) {
     const res = await api('POST', '/api/admin/spin-wheel', { groupId });
     const order = res.performanceOrder;
 
-    // Animate: cycle through names rapidly then slow
     let i = 0;
     let delay = 60;
     namesEl.classList.add('spinning');
@@ -1593,9 +2261,39 @@ async function adminCompleteGroup(groupId) {
   const winnerEl = qs(`#winner-${groupId}`);
   const winner = winnerEl ? winnerEl.value.trim() : '';
   try {
-    await api('POST', '/api/admin/advance', { action: 'complete-group', data: { groupId, winner } });
+    await api('POST', '/api/admin/advance', { action: 'complete-group', data: { groupId, winner: winner || undefined } });
   } catch (e) { alert(e.message); }
 }
+
+async function adminRevealPodium(thirdPlace) {
+  try {
+    await api('POST', '/api/admin/advance', { action: 'reveal-podium', data: thirdPlace ? { thirdPlace } : {} });
+    const st = await api('GET', '/api/state');
+    S.serverState = st;
+    S.lastVersion = st.version;
+    render(st);
+    if (st.bracket.champion && st.bracket.third_place) showPodium(st);
+  } catch (e) { alert(e.message); }
+}
+
+async function adminCompleteFinalAndReveal() {
+  try {
+    await api('POST', '/api/admin/advance', { action: 'complete-final' });
+    // Auto-trigger reveal-podium (server will apply tiebreak if needed)
+    await adminRevealPodium(null);
+  } catch (e) { alert(e.message); }
+}
+
+function showPodium(st) {
+  if (!st || !st.bracket.champion) return;
+  const fr = st.bracket.final_result || {};
+  setText('#podium-1st', st.bracket.champion || '—');
+  setText('#podium-2nd', fr.loser || '—');
+  setText('#podium-3rd', st.bracket.third_place || '—');
+  show('#podium-overlay');
+}
+
+qs('#podium-close').addEventListener('click', () => hide('#podium-overlay'));
 
 async function adminAdvance(action, data) {
   try {
@@ -1607,35 +2305,101 @@ async function adminAdvance(action, data) {
 
 function renderAdminVotingControl(st) {
   const body = qs('#admin-voting-body');
-  const activeGroup = st.groups?.find(g => g.status === 'active');
+  const v = st.voting;
 
-  if (!activeGroup && st.phase === 'group') {
-    body.innerHTML = '<p class="muted">No active group.</p>';
+  let candidates = [];
+  let excludeParticipants = [];
+  let completeAction = null;
+  let completeLabel = '';
+  let canOpenVoting = false;
+
+  if (st.phase === 'group') {
+    const activeGroup = st.groups?.find(g => g.status === 'active');
+    if (!activeGroup) { body.innerHTML = '<p class="muted">No active group.</p>'; return; }
+    candidates = activeGroup.members;
+    completeAction = () => adminCompleteGroup(activeGroup.id);
+    completeLabel = '✓ Complete Group';
+    canOpenVoting = true;
+
+  } else if (st.phase === 'quarter_debate') {
+    const spoken = st.bracket.quarter_spoken || [];
+    const allMembers = [...(st.bracket.quarter_groups[0] || []), ...(st.bracket.quarter_groups[1] || [])];
+    const allSpoken = allMembers.length > 0 && allMembers.every(n => spoken.includes(n));
+    if (!allSpoken) { body.innerHTML = `<p class="muted">Waiting for all ${allMembers.length} speakers (${spoken.length} spoken so far).</p>`; return; }
+    candidates = ['Group A', 'Group B'];
+    excludeParticipants = allMembers;
+    completeAction = () => adminAdvance('complete-quarter');
+    completeLabel = '✓ Complete Quarter → Semifinal';
+    canOpenVoting = true;
+
+  } else if (st.phase === 'semi_final') {
+    const pairs = st.bracket.semi_pairs || [];
+    const completedPairs = (st.bracket.semi_results || []).map(r => r.pairIdx);
+    const activePairIdx = pairs.findIndex((_, i) => !completedPairs.includes(i));
+    if (activePairIdx === -1) {
+      const allDone = completedPairs.length === pairs.length;
+      body.innerHTML = allDone
+        ? '<p class="muted">Both matchups done — advance to Final via Phase Control.</p>'
+        : '<p class="muted">No active matchup.</p>';
+      return;
+    }
+    const pair = pairs[activePairIdx];
+    const spoken = (st.bracket.semi_spoken && st.bracket.semi_spoken[activePairIdx]) || [];
+    const bothSpoken = pair.every(n => spoken.includes(n));
+    if (!bothSpoken) { body.innerHTML = `<p class="muted">Matchup ${activePairIdx + 1}: waiting for both speakers (${spoken.length}/2).</p>`; return; }
+    candidates = pair;
+    completeAction = () => adminAdvance('complete-semi', { pairIdx: activePairIdx });
+    completeLabel = `✓ Complete Matchup ${activePairIdx + 1}`;
+    canOpenVoting = true;
+
+  } else if (st.phase === 'final') {
+    const finalists = st.bracket.finalists || [];
+    if (finalists.length < 2) { body.innerHTML = '<p class="muted">Finalists not set.</p>'; return; }
+    candidates = finalists;
+    completeAction = () => adminCompleteFinalAndReveal();
+    completeLabel = '✓ Complete Final & Reveal Podium';
+    canOpenVoting = true;
+
+  } else {
+    body.innerHTML = '<p class="muted">No active round.</p>';
     return;
   }
 
-  const candidates = activeGroup ? activeGroup.members : [];
-  const v = st.voting;
-
   let html = '';
-
   if (!v.active && !v.results) {
-    html += `<button class="btn btn-gold" onclick="adminOpenVoting(${JSON.stringify(candidates)})">Open Voting</button>`;
+    if (canOpenVoting) {
+      html += `<button class="btn btn-gold" onclick="adminOpenVoting(${JSON.stringify(candidates)}, ${JSON.stringify(excludeParticipants)})">Open Voting</button>`;
+    }
   } else if (v.active) {
     html += `<p class="muted">Voting open — ${Object.keys(v.votes).length} / ${v.eligibleVoters.length} votes cast.</p>`;
     html += `<button class="btn btn-danger btn-sm mt8" onclick="adminCloseVoting()">Close Voting &amp; Reveal Results</button>`;
   } else if (v.results) {
-    html += `<p class="muted">Voting closed. Results shown.</p>`;
-    html += `<button class="btn btn-outline btn-sm mt8" onclick="adminOpenVoting(${JSON.stringify(candidates)})">Reopen Voting</button>`;
+    html += `<p class="muted">Voting closed.</p>`;
+    if (completeAction) {
+      const _action = completeAction;
+      window._pendingCompleteAction = _action;
+      html += `<button class="btn btn-green btn-sm mt8" onclick="window._pendingCompleteAction()">${completeLabel}</button>`;
+    }
+    html += `<button class="btn btn-outline btn-sm mt8" onclick="adminOpenVoting(${JSON.stringify(candidates)}, ${JSON.stringify(excludeParticipants)})">Reopen Voting</button>`;
+  }
+
+  // 3rd place tiebreak — shown when champion exists but 3rd is still unresolved
+  if (st.bracket.champion && !st.bracket.third_place && st.bracket.third_place_candidates.length === 2) {
+    const [c1, c2] = st.bracket.third_place_candidates;
+    html += `<hr class="divider" /><p class="muted" style="margin-bottom:6px;">Cast decisive vote for 3rd place:</p>
+    <div class="btn-row">
+      <button class="btn btn-sm btn-outline" onclick="adminRevealPodium('${c1.name}')">${c1.name}</button>
+      <button class="btn btn-sm btn-outline" onclick="adminRevealPodium('${c2.name}')">${c2.name}</button>
+    </div>`;
   }
 
   body.innerHTML = html;
 }
 
-async function adminOpenVoting(candidates) {
+async function adminOpenVoting(candidates, excludeParticipants) {
   try {
     const ws = parseInt(qs('#set-votingWindowSeconds')?.value || '60');
-    await api('POST', '/api/admin/open-voting', { candidates, windowSeconds: ws });
+    await api('POST', '/api/admin/open-voting', { candidates, windowSeconds: ws, excludeParticipants: excludeParticipants || [] });
   } catch (e) { alert(e.message); }
 }
 
@@ -1655,23 +2419,50 @@ async function adminTiebreak(candidateName) {
 // ── Phase advance buttons ─────────────────────────────────────────────────────
 
 qs('#admin-start-quarter').addEventListener('click', async () => {
-  if (!confirm('Advance to Quarter-Debate? This will randomly assign teams.')) return;
+  const st = S.serverState;
+  if (!st) return;
+  const results = st.bracket.group_results;
+  const allGroupsDone = st.groups.every(g => g.status === 'done');
+  if (!allGroupsDone) { alert('Not all groups are complete yet.'); return; }
+  const winners = results.map(r => r.winner).filter(Boolean);
+  const runnersUp = results.filter(r => r.runner_up).map(r => ({ name: r.runner_up, votes: r.runner_up_votes })).sort((a, b) => b.votes - a.votes);
+  const needed = Math.max(0, 8 - winners.length);
+  const advancing = [...winners, ...runnersUp.slice(0, needed).map(r => r.name)];
+  if (!confirm(`Advance to Quarter-Debate with these ${advancing.length} participants?\n\n${advancing.join(', ')}`)) return;
   await adminAdvance('start-quarter');
 });
 qs('#admin-start-semi').addEventListener('click', async () => {
-  if (!confirm('Advance to Semifinal?')) return;
+  const st = S.serverState;
+  if (st && st.bracket.quarter_winner_idx === null) { alert('Quarter result not set. Complete the Quarter-Debate first.'); return; }
+  const winnerGroup = st.bracket.quarter_groups[st.bracket.quarter_winner_idx] || [];
+  if (!confirm(`Advance to Semifinal with: ${winnerGroup.join(', ')}?`)) return;
   await adminAdvance('start-semi');
 });
 qs('#admin-start-final').addEventListener('click', async () => {
-  if (!confirm('Advance to Final?')) return;
+  const st = S.serverState;
+  const finalists = st?.bracket.finalists || [];
+  if (finalists.length < 2) { alert('Both semifinal matchups must be complete first.'); return; }
+  if (!confirm(`Start the Final: ${finalists.join(' vs ')}?`)) return;
   await adminAdvance('start-final');
 });
 qs('#admin-close').addEventListener('click', async () => {
+  const st = S.serverState;
+  if (st?.bracket.champion && !st.bracket.third_place) {
+    // Reveal podium first
+    const cands = st.bracket.third_place_candidates;
+    if (cands.length === 2 && cands[0].votes !== cands[1].votes) {
+      if (!confirm('Reveal podium and close event?')) return;
+      await adminAdvance('reveal-podium');
+      showPodium(S.serverState);
+      return;
+    }
+  }
   if (!confirm('Close the event?')) return;
   await adminAdvance('close');
 });
 qs('#admin-reset').addEventListener('click', async () => {
   if (!confirm('RESET everything? All state will be lost.')) return;
+  localStorage.removeItem('tm21');
   await adminAdvance('reset');
   location.reload();
 });

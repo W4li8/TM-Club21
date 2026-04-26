@@ -1,3 +1,23 @@
+phases:
+  registration:
+    name: "Registration"
+    description: "Participants join and register for the event. The admin will lock registration and generate the draw when everyone is ready — groups are then assigned randomly."
+  group_stage:
+    name: "Group Stage"
+    description: "Competitors speak in their assigned group, all on the same drawn question. Audience and fellow participants vote for the best speaker. Each group's winner advances to the next round."
+  quarter_debate:
+    name: "Quarter-Debate"
+    description: "Group stage winners face off on a challenging leadership dilemma. The best speaker from each match advances to the Semifinal."
+  semi_final:
+    name: "Semifinal"
+    description: "The remaining competitors face truly impossible choice questions. Only the strongest speakers make it to the Final."
+  final:
+    name: "Final"
+    description: "The last competitors standing face the ultimate question on the human condition. The winner is crowned Table Topics Olympic Champion."
+  closed:
+    name: "Closed"
+    description: "The event has concluded. Congratulations to all participants and thank you for joining!"
+
 group_stage:
   theme: "Unexpected Situations"
   questions:

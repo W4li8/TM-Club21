@@ -17,6 +17,37 @@ const defaultSettings = {
   },
 };
 
+function freshBracket() {
+  return {
+    // Group stage results: [{groupId, winner, runner_up, runner_up_votes}]
+    group_results: [],
+    // 8 names advancing to quarter-debate
+    advancing: [],
+    // Two groups of 4: [groupA[], groupB[]]
+    quarter_groups: [[], []],
+    // Names who have already spoken in quarter-debate
+    quarter_spoken: [],
+    // 0 = Group A won, 1 = Group B won
+    quarter_winner_idx: null,
+    // Two 1v1 pairs for semi: [[n1,n2],[n3,n4]]
+    semi_pairs: [],
+    // Names spoken per pair: [[],[]]
+    semi_spoken: [[], []],
+    // [{pairIdx, winner, loser, winner_votes, loser_votes}]
+    semi_results: [],
+    // The two finalists
+    finalists: [],
+    // {winner, loser} — result of the final
+    final_result: null,
+    // Champion name
+    champion: null,
+    // [{name, votes}] — the two semi losers competing for 3rd
+    third_place_candidates: [],
+    // 3rd place name
+    third_place: null,
+  };
+}
+
 let state = {
   phase: 'registration',
   settings: JSON.parse(JSON.stringify(defaultSettings)),
@@ -34,13 +65,9 @@ let state = {
     results: null,
     tiebreakAdminVoteUsed: false,
   },
-  bracket: {
-    group_winners: [],
-    quarter_teams: [],
-    semi_winners: [],
-    finalist: null,
-  },
+  bracket: freshBracket(),
   adminList: [],
+  disqualifiedSpeakers: [],
   version: 0,
 };
 
@@ -70,13 +97,9 @@ function resetState() {
       results: null,
       tiebreakAdminVoteUsed: false,
     },
-    bracket: {
-      group_winners: [],
-      quarter_teams: [],
-      semi_winners: [],
-      finalist: null,
-    },
+    bracket: freshBracket(),
     adminList: [],
+    disqualifiedSpeakers: [],
     version: 0,
   };
 }

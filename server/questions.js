@@ -28,4 +28,8 @@ function getTheme(stageName) {
   return questions[stageName].theme;
 }
 
-module.exports = { loadQuestions, getRandomUnusedQuestion, getTheme };
+function getPhases() {
+  return (questions && questions.phases) || {};
+}
+
+module.exports = { loadQuestions, getRandomUnusedQuestion, getTheme, getPhases };
