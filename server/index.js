@@ -23,27 +23,73 @@ loadQuestions();
 
 // ── Auth helpers ────────────────────────────────────────────────────────────
 
+function getRequester(st, req) {
+  const headerName = typeof req.headers['x-name'] === 'string' ? req.headers['x-name'] : '';
+  const name = headerName.trim();
+  if (!name) return null;
+  return st.participants.find((p) => p.name === name) || null;
+}
+
 function checkUser(req, res) {
-  const pwd = req.headers['x-password'] || req.body?.password;
-  if (pwd !== USER_PASSWORD && pwd !== ADMIN_PASSWORD) {
-    res.status(401).json({ error: 'Invalid password' });
-    return false;
+  const st = getState();
+  const requester = getRequester(st, req);
+  if (requester) {
+    req.requester = requester;
+    return true;
   }
-  return true;
+
+  const pwd = req.headers['x-password'] || req.body?.password;
+  if (pwd === USER_PASSWORD || pwd === ADMIN_PASSWORD) {
+    return true;
+  }
+
+  res.status(401).json({ error: 'Unknown participant. Please join first.' });
+  return false;
 }
 
 function checkAdmin(req, res) {
+  const st = getState();
+  const requester = getRequester(st, req);
+  if (requester && requester.isAdmin) {
+    req.requester = requester;
+    return true;
+  }
+
   const pwd = req.headers['x-password'] || req.body?.password;
-  if (pwd !== ADMIN_PASSWORD) {
-    res.status(403).json({ error: 'Admin access required' });
+  if (pwd === ADMIN_PASSWORD) {
+    return true;
+  }
+
+  res.status(403).json({ error: 'Admin access required' });
+  return false;
+}
+
+function isAdminReq(req, existingParticipant) {
+  if (existingParticipant && existingParticipant.isAdmin) return true;
+  const st = getState();
+  const requester = getRequester(st, req);
+  if (requester && requester.isAdmin) return true;
+
+  const pwd = req.headers['x-password'] || req.body?.password;
+  return pwd === ADMIN_PASSWORD;
+}
+
+function requireSelf(req, res, name) {
+  if (!checkUser(req, res)) return null;
+  const requester = req.requester;
+  if (!requester) return true;
+  if (!name || requester.name !== name) {
+    res.status(403).json({ error: 'Can only act as your own user' });
     return false;
   }
   return true;
 }
 
-function isAdminReq(req) {
-  const pwd = req.headers['x-password'] || req.body?.password;
-  return pwd === ADMIN_PASSWORD;
+function upsertSpeakerLogEntry(st, payload) {
+  if (!payload || !payload.name) return;
+  const idx = st.speakerLog.findIndex((x) => x.name === payload.name && x.phase === payload.phase);
+  if (idx >= 0) st.speakerLog[idx] = { ...st.speakerLog[idx], ...payload };
+  else st.speakerLog.push(payload);
 }
 
 // ── Public: known-name check & phases ────────────────────────────────────────
@@ -51,21 +97,12 @@ function isAdminReq(req) {
 app.get('/api/known-name', (req, res) => {
   const name = (req.query.name || '').trim();
   const st = getState();
-  const known = st.participants.some((p) => p.name === name);
-  res.json({ known });
+  const p = st.participants.find((p) => p.name === name);
+  res.json({ known: !!p, isAdmin: p?.isAdmin ?? false });
 });
 
 app.get('/api/phases', (req, res) => {
   res.json(getPhases());
-});
-
-// ── Auth ─────────────────────────────────────────────────────────────────────
-
-app.post('/api/auth', (req, res) => {
-  const { password } = req.body;
-  if (password === ADMIN_PASSWORD) return res.json({ role: 'admin' });
-  if (password === USER_PASSWORD) return res.json({ role: 'user' });
-  res.status(401).json({ error: 'Invalid password' });
 });
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -79,10 +116,6 @@ app.get('/api/state', (req, res) => {
 
 app.post('/api/join', (req, res) => {
   const pwd = req.headers['x-password'] || req.body?.password;
-  if (pwd !== USER_PASSWORD && pwd !== ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Invalid password' });
-  }
-
   const { name, role, rejoin } = req.body;
   if (!name || typeof name !== 'string' || !name.trim()) {
     return res.status(400).json({ error: 'Name required' });
@@ -91,7 +124,13 @@ app.post('/api/join', (req, res) => {
   const st = getState();
   const trimmed = name.trim();
   const existing = st.participants.find((p) => p.name === trimmed);
-  const adminJoin = isAdminReq(req);
+
+  // Known participants may rejoin without re-entering the password
+  const passwordOk = pwd === USER_PASSWORD || pwd === ADMIN_PASSWORD;
+  if (!passwordOk && !(rejoin && existing)) {
+    return res.status(401).json({ error: 'Invalid password' });
+  }
+  const adminJoin = isAdminReq(req, existing);
 
   if (existing) {
     if (!rejoin) {
@@ -108,7 +147,10 @@ app.post('/api/join', (req, res) => {
 
   // New join
   const isAdmin = adminJoin;
-  let assignedRole = role === 'competitor' ? 'competitor' : 'observer';
+  const requestedRole = role === 'competitor' ? 'competitor' : 'observer';
+  let assignedRole = requestedRole;
+  const joinedAfterRegistration = st.phase !== 'registration';
+  const wantsToCompete = requestedRole === 'competitor';
 
   // If draw locked and all slots filled, force observer
   if (st.phase !== 'registration') {
@@ -121,6 +163,8 @@ app.post('/api/join', (req, res) => {
   const participant = {
     name: trimmed,
     role: assignedRole,
+    wantsToCompete,
+    joinedAfterRegistration,
     groupIndex: null,
     joinedAt: Date.now(),
     isAdmin,
@@ -141,9 +185,15 @@ app.post('/api/vote', (req, res) => {
   if (!checkUser(req, res)) return;
   const { voterName, candidateName } = req.body;
   const st = getState();
+  const effectiveVoter = req.requester?.name || voterName;
+
+  if (!effectiveVoter) return res.status(400).json({ error: 'Voter name required' });
+  if (req.requester && voterName && voterName !== req.requester.name) {
+    return res.status(403).json({ error: 'Can only vote as yourself' });
+  }
 
   if (!st.voting.active) return res.status(400).json({ error: 'Voting not open' });
-  if (!st.voting.eligibleVoters.includes(voterName)) {
+  if (!st.voting.eligibleVoters.includes(effectiveVoter)) {
     return res.status(403).json({ error: 'Not eligible to vote in this round' });
   }
 
@@ -157,10 +207,24 @@ app.post('/api/vote', (req, res) => {
     ? Object.keys(st.voting.results || {})
     : [];
 
-  // Derive candidates from current round contestants
-  if (!st.currentSpeaker) return res.status(400).json({ error: 'No active round' });
+  st.voting.votes[effectiveVoter] = candidateName;
+  bump();
+  res.json({ ok: true });
+});
 
-  st.voting.votes[voterName] = candidateName;
+// ── Admin: Remove participant ─────────────────────────────────────────────────
+
+app.post('/api/admin/remove-participant', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  const st = getState();
+  if (st.phase !== 'registration') {
+    return res.status(400).json({ error: 'Can only remove participants during registration' });
+  }
+  const { name } = req.body;
+  const idx = st.participants.findIndex((p) => p.name === name);
+  if (idx === -1) return res.status(404).json({ error: 'Participant not found' });
+  st.participants.splice(idx, 1);
+  st.adminList = st.adminList.filter((n) => n !== name);
   bump();
   res.json({ ok: true });
 });
@@ -199,7 +263,7 @@ app.post('/api/admin/lock-draw', (req, res) => {
   const shuffled = [...competitors].sort(() => Math.random() - 0.5);
   const groups = [];
   for (let i = 0; i < n; i++) {
-    groups.push({ id: i, members: [], performanceOrder: [], status: 'pending' });
+    groups.push({ id: i, members: [], performanceOrder: [], spokenMembers: [], status: 'pending' });
   }
   shuffled.forEach((p, idx) => {
     const gIdx = idx % n;
@@ -208,6 +272,8 @@ app.post('/api/admin/lock-draw', (req, res) => {
   });
 
   st.groups = groups;
+  st.spinState = null;
+  st.speakerLog = [];
   st.phase = 'group';
   bump();
   res.json({ ok: true, groups: st.groups });
@@ -229,6 +295,8 @@ app.post('/api/admin/assign-late', (req, res) => {
 
   p.role = 'competitor';
   p.groupIndex = groupIndex;
+  p.wantsToCompete = true;
+  p.joinedAfterRegistration = false;
   if (!group.members.includes(name)) group.members.push(name);
   bump();
   res.json({ ok: true });
@@ -246,6 +314,13 @@ app.post('/api/admin/spin-wheel', (req, res) => {
 
   const shuffled = [...group.members].sort(() => Math.random() - 0.5);
   group.performanceOrder = shuffled;
+  st.spinState = {
+    groupId,
+    names: shuffled,
+    startedAt: Date.now(),
+    durationMs: 2200,
+    winner: shuffled[0] || null,
+  };
   bump();
   res.json({ ok: true, performanceOrder: shuffled });
 });
@@ -291,6 +366,7 @@ app.post('/api/admin/timer', (req, res) => {
       st.currentSpeaker.disqualified = false;
       st.currentSpeaker.timerState = 'running';
     }
+    st.spinState = null;
   } else if (action === 'stop') {
     if (st.currentSpeaker && st.currentSpeaker.timerState === 'running') {
       const stoppedAt = Date.now();
@@ -307,6 +383,29 @@ app.post('/api/admin/timer', (req, res) => {
           st.disqualifiedSpeakers.push(name);
         }
       }
+
+      const phase = st.phase;
+      const speakerNameForLog = st.currentSpeaker.name;
+      if (speakerNameForLog) {
+        upsertSpeakerLogEntry(st, {
+          name: speakerNameForLog,
+          phase,
+          groupId: st.currentSpeaker.groupId ?? null,
+          durationMs: Math.max(0, stoppedAt - st.currentSpeaker.startTime),
+          disqualified: dq,
+          spokenAt: stoppedAt,
+        });
+      }
+
+      if (phase === 'group' && speakerNameForLog) {
+        const group = st.groups.find((g) => g.id === st.currentSpeaker.groupId);
+        if (group) {
+          if (!Array.isArray(group.spokenMembers)) group.spokenMembers = [];
+          if (!group.spokenMembers.includes(speakerNameForLog)) {
+            group.spokenMembers.push(speakerNameForLog);
+          }
+        }
+      }
     }
   } else if (action === 'restart') {
     if (st.currentSpeaker) {
@@ -315,8 +414,17 @@ app.post('/api/admin/timer', (req, res) => {
       st.currentSpeaker.disqualified = false;
       st.currentSpeaker.timerState = 'running';
     }
+    st.spinState = null;
   } else if (action === 'set-speaker') {
     st.currentSpeaker = { name: speakerName, groupId, startTime: null, stoppedAt: null, disqualified: false, timerState: 'idle' };
+    st.spinState = null;
+    if (st.phase === 'group' && typeof groupId === 'number') {
+      st.groups.forEach((g) => {
+        if (g.status === 'active' && g.id !== groupId) g.status = 'pending';
+      });
+      const group = st.groups.find((g) => g.id === groupId);
+      if (group && group.status !== 'done') group.status = 'active';
+    }
   }
 
   bump();
@@ -338,11 +446,55 @@ app.post('/api/admin/override-dq', (req, res) => {
   res.json({ ok: true });
 });
 
+// ── Demo seed ─────────────────────────────────────────────────────────────────
+
+const DEMO_PARTICIPANTS = [
+  { name: 'Alice Thornton', role: 'competitor' },
+  { name: 'Bob Hargrove', role: 'competitor' },
+  { name: 'Clara Voss', role: 'competitor' },
+  { name: 'Dario Espinoza', role: 'competitor' },
+  { name: 'Elena Marsh', role: 'competitor' },
+  { name: "Finn O'Brien", role: 'competitor' },
+  { name: 'Grace Liu', role: 'competitor' },
+  { name: 'Hector Patel', role: 'competitor' },
+  { name: 'Iris Nakamura', role: 'competitor' },
+  { name: 'Jack Fontaine', role: 'competitor' },
+  { name: 'Kira Svensson', role: 'competitor' },
+  { name: 'Luca Ferretti', role: 'competitor' },
+  { name: 'Morgan Hayes', role: 'observer' },
+];
+
+app.post('/api/admin/demo-seed', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  const st = getState();
+  if (st.phase !== 'registration') {
+    return res.status(400).json({ error: 'Demo seed only available during registration' });
+  }
+  let added = 0;
+  for (const { name, role } of DEMO_PARTICIPANTS) {
+    if (!st.participants.some((p) => p.name === name)) {
+      st.participants.push({
+        name,
+        role,
+        wantsToCompete: role === 'competitor',
+        joinedAfterRegistration: false,
+        groupIndex: null,
+        joinedAt: Date.now() + added,
+        isAdmin: false,
+      });
+      added++;
+    }
+  }
+  bump();
+  res.json({ ok: true, added });
+});
+
 // ── Self opt-out ──────────────────────────────────────────────────────────────
 
 app.post('/api/self-opt', (req, res) => {
-  if (!checkUser(req, res)) return;
   const { name, role } = req.body;
+  const allowed = requireSelf(req, res, name);
+  if (!allowed) return;
   const st = getState();
   if (st.phase !== 'registration') {
     return res.status(400).json({ error: 'Registration already closed' });
@@ -350,6 +502,8 @@ app.post('/api/self-opt', (req, res) => {
   const p = st.participants.find((x) => x.name === name);
   if (!p) return res.status(404).json({ error: 'Participant not found' });
   p.role = role === 'competitor' ? 'competitor' : 'observer';
+  p.wantsToCompete = p.role === 'competitor';
+  p.joinedAfterRegistration = false;
   bump();
   res.json({ ok: true, role: p.role });
 });
@@ -365,10 +519,23 @@ app.post('/api/admin/open-voting', (req, res) => {
     return res.status(400).json({ error: 'Candidates required' });
   }
 
+  if (st.phase === 'group') {
+    const activeGroup = st.groups.find((g) => g.status === 'active');
+    if (!activeGroup) {
+      return res.status(400).json({ error: 'No active group selected' });
+    }
+    const spokenSet = new Set(activeGroup.spokenMembers || []);
+    const allSpoken = activeGroup.members.every((name) => spokenSet.has(name));
+    if (!allSpoken) {
+      return res.status(400).json({ error: 'All active group speakers must complete speaking before voting opens' });
+    }
+  }
+
   // Filter DQ'd speakers from candidates
   const candidates = rawCandidates.filter((c) => !st.disqualifiedSpeakers.includes(c));
 
-  // Eligible = all participants except candidates AND any explicitly excluded speakers
+  // Eligible = all participants except candidates and any explicitly excluded speakers.
+  // Active round members should see voting in progress but not receive a ballot.
   const excluded = new Set([...candidates, ...(excludeParticipants || [])]);
   const eligible = st.participants
     .filter((p) => !excluded.has(p.name))
@@ -470,7 +637,13 @@ app.post('/api/admin/advance', (req, res) => {
     // Mark current speaker as spoken in their phase tracking
     if (st.currentSpeaker) {
       const name = st.currentSpeaker.name;
-      if (st.phase === 'quarter_debate' && name) {
+      if (st.phase === 'group' && name) {
+        const group = st.groups.find((g) => g.id === st.currentSpeaker.groupId);
+        if (group) {
+          if (!Array.isArray(group.spokenMembers)) group.spokenMembers = [];
+          if (!group.spokenMembers.includes(name)) group.spokenMembers.push(name);
+        }
+      } else if (st.phase === 'quarter_debate' && name) {
         if (!st.bracket.quarter_spoken.includes(name)) st.bracket.quarter_spoken.push(name);
       } else if (st.phase === 'semi_final' && name) {
         st.bracket.semi_pairs.forEach((pair, pairIdx) => {
@@ -483,6 +656,7 @@ app.post('/api/admin/advance', (req, res) => {
     }
     st.currentSpeaker = null;
     st.currentQuestion = null;
+    st.spinState = null;
     bump();
 
   } else if (action === 'complete-group') {
@@ -502,8 +676,13 @@ app.post('/api/admin/advance', (req, res) => {
     else st.bracket.group_results.push(result);
 
     group.status = 'done';
+    group.spokenMembers = [...new Set(group.members)];
+    st.groups.forEach((g) => {
+      if (g.id !== groupId && g.status === 'active') g.status = 'pending';
+    });
     st.currentSpeaker = null;
     st.currentQuestion = null;
+    st.spinState = null;
     bump();
 
   } else if (action === 'start-quarter') {
@@ -523,6 +702,7 @@ app.post('/api/admin/advance', (req, res) => {
     st.bracket.quarter_groups = [shuffled.slice(0, 4), shuffled.slice(4)];
     st.bracket.quarter_spoken = [];
     st.bracket.quarter_winner_idx = null;
+    st.spinState = null;
     st.phase = 'quarter_debate';
     bump();
 
@@ -537,6 +717,7 @@ app.post('/api/admin/advance', (req, res) => {
     st.bracket.quarter_winner_idx = winnerIdx ?? 0;
     st.currentSpeaker = null;
     st.currentQuestion = null;
+    st.spinState = null;
     bump();
 
   } else if (action === 'start-semi') {
@@ -549,6 +730,7 @@ app.post('/api/admin/advance', (req, res) => {
     st.bracket.semi_results = [];
     st.bracket.finalists = [];
     st.bracket.third_place_candidates = [];
+    st.spinState = null;
     st.phase = 'semi_final';
     bump();
 
@@ -565,9 +747,11 @@ app.post('/api/admin/advance', (req, res) => {
 
     st.currentSpeaker = null;
     st.currentQuestion = null;
+    st.spinState = null;
     bump();
 
   } else if (action === 'start-final') {
+    st.spinState = null;
     st.phase = 'final';
     bump();
 
@@ -579,6 +763,7 @@ app.post('/api/admin/advance', (req, res) => {
     st.bracket.final_result = { winner: finalWinner, loser: finalLoser };
     st.currentSpeaker = null;
     st.currentQuestion = null;
+    st.spinState = null;
     bump();
 
   } else if (action === 'reveal-podium') {
@@ -613,9 +798,11 @@ app.post('/api/admin/advance', (req, res) => {
     st.bracket.third_place = third;
     // Only close if 3rd place is resolved
     if (third || (data && data.thirdPlace !== undefined)) st.phase = 'closed';
+    st.spinState = null;
     bump();
 
   } else if (action === 'close') {
+    st.spinState = null;
     st.phase = 'closed';
     bump();
 
@@ -636,4 +823,22 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`[tm-olympics] Server running on port ${PORT}`);
+  if (process.argv.includes('--demo')) {
+    const st = getState();
+    for (const { name, role } of DEMO_PARTICIPANTS) {
+      if (!st.participants.some((p) => p.name === name)) {
+        st.participants.push({
+          name,
+          role,
+          wantsToCompete: role === 'competitor',
+          joinedAfterRegistration: false,
+          groupIndex: null,
+          joinedAt: Date.now(),
+          isAdmin: false,
+        });
+      }
+    }
+    bump();
+    console.log('[tm-olympics] Demo mode: seeded', DEMO_PARTICIPANTS.length, 'participants');
+  }
 });

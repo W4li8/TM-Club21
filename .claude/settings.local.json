@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pkill -f \"node server/index.js\")",
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s http://localhost:3000/api/state)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('phase:', d['phase']\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('phase:', d.get\\('phase','?'\\), 'participants:', len\\(d.get\\('participants',[]\\)\\)\\)\")",
+      "Bash(curl -s -X POST -H \"x-password: admin\" -H \"Content-Type: application/json\" -d '{\"name\":\"Admin\"}' http://localhost:3000/api/join)",
+      "Bash(python3 -c \"import sys,json; print\\(json.load\\(sys.stdin\\)\\)\")",
+      "Bash(curl -s -X POST -H \"x-password: admin\" -H \"Content-Type: application/json\" http://localhost:3000/api/admin/demo-seed)",
+      "Bash(curl -s -H \"x-password: admin\" http://localhost:3000/api/state)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(p['name'], p['role']\\) for p in d['participants']]\")",
+      "Bash(node server/index.js)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(p['name'], '-', p['role']\\) for p in d['participants']]\")"
+    ]
+  }
+}

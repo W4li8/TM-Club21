@@ -393,7 +393,7 @@ input:focus, select:focus {
 }
 
 #timer-card.flash-grey  { animation: flash-grey  0.9s ease-in-out infinite; outline-offset: 0; }
-#timer-card.flash-green { animation: flash-green 0.45s ease-in-out infinite; outline-offset: 0; }
+#timer-card.flash-green { animation: flash-green 0.95s ease-in-out infinite; outline-offset: 0; }
 #timer-card.flash-red   { animation: flash-red   0.45s ease-in-out infinite; outline-offset: 0; }
 #timer-card.flash-black { animation: flash-black 0.6s ease-in-out infinite; outline-offset: 0; }
 
@@ -410,6 +410,24 @@ input:focus, select:focus {
   font-variant-numeric: tabular-nums;
   color: var(--navy);
   line-height: 1;
+}
+
+.timer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.timer-current-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--navy);
+  background: #fffbe6;
+  border: 1px solid rgba(200,168,0,0.35);
+  border-radius: 99px;
+  padding: 2px 10px;
 }
 
 .timer-speaker {
@@ -583,6 +601,20 @@ input:focus, select:focus {
   margin-bottom: 6px;
 }
 
+.group-progress-badge {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--green);
+  background: #e6f7ec;
+  border: 1px solid rgba(46,125,50,0.25);
+  border-radius: 99px;
+  padding: 1px 6px;
+  vertical-align: middle;
+}
+
 .member-list {
   list-style: none;
   display: flex;
@@ -599,6 +631,10 @@ input:focus, select:focus {
   font-weight: 600;
 }
 .member-chip.current { background: var(--gold); color: var(--navy); }
+.member-chip.me {
+  background: #e8f0ff;
+  border: 1px solid rgba(0,40,104,0.3);
+}
 .member-chip.dq { background: #fdecea; color: var(--red); text-decoration: line-through; }
 
 /* ── Admin section ───────────────────────────────────────────── */
@@ -658,15 +694,39 @@ input:focus, select:focus {
 .wheel-box h3 { color: var(--navy); margin-bottom: 16px; }
 
 #wheel-names {
-  font-size: 1.6rem;
+  font-size: 1.3rem;
   font-weight: 800;
   color: var(--navy);
-  min-height: 60px;
+  min-height: 132px;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
 }
 #wheel-names.spinning { color: var(--gold); }
+
+.wheel-row {
+  opacity: 0.4;
+  transform: scale(0.92);
+  transition: transform 0.08s linear, opacity 0.08s linear;
+}
+
+.wheel-row.center {
+  opacity: 1;
+  transform: scale(1);
+  color: var(--navy);
+}
+
+.wheel-row.me {
+  color: #003a8c;
+  font-weight: 900;
+}
+
+.wheel-row.center.me {
+  color: var(--gold-dark);
+}
 
 .wheel-result { margin-top: 14px; font-size: 0.85rem; color: var(--gray); }
 
@@ -680,6 +740,11 @@ input:focus, select:focus {
   font-size: 0.88rem;
 }
 .participant-row:last-child { border-bottom: none; }
+.participant-row.me {
+  background: #eef4ff;
+  border-radius: 6px;
+  padding: 7px 8px;
+}
 .participant-role-badge {
   font-size: 0.7rem;
   font-weight: 700;
@@ -693,6 +758,94 @@ input:focus, select:focus {
 
 /* ── Voting timer ────────────────────────────────────────────── */
 .voting-countdown { font-size: 0.82rem; color: var(--gray); margin-bottom: 6px; }
+
+#vote-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 580;
+}
+
+#vote-popup-overlay.hidden { display: none; }
+
+.vote-popup-box {
+  background: var(--white);
+  border-radius: 14px;
+  width: min(92vw, 380px);
+  padding: 18px;
+  box-shadow: 0 10px 38px rgba(0, 0, 0, 0.35);
+}
+
+.vote-popup-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--navy);
+  margin-bottom: 4px;
+}
+
+.vote-popup-sub {
+  font-size: 0.82rem;
+  color: var(--gray);
+  margin-bottom: 10px;
+}
+
+.vote-popup-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.vote-popup-choice {
+  width: 100%;
+  border: 2px solid var(--gray-light);
+  background: var(--white);
+  color: var(--navy);
+  border-radius: 8px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.vote-popup-choice.selected {
+  border-color: var(--gold-dark);
+  background: #fffbe6;
+}
+
+.speaker-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.speaker-log-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--gray-light);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.82rem;
+}
+
+.speaker-log-row.me {
+  background: #eef4ff;
+}
+
+.speaker-log-row .t {
+  color: var(--gray);
+  font-variant-numeric: tabular-nums;
+}
+
+.speaker-log-row .dq {
+  color: var(--red);
+  font-weight: 700;
+}
 
 /* ── Phase badge ─────────────────────────────────────────────── */
 .phase-badge {
@@ -943,7 +1096,8 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
     </div>
     <div class="header-right">
       <strong id="hdr-name">—</strong><br/>
-      <span id="hdr-role">—</span>
+      <span id="hdr-role">—</span><br/>
+      <button id="btn-logout" class="btn btn-sm" style="margin-top:6px;font-size:0.7rem;padding:2px 8px;opacity:0.7;display:none">Log out</button>
     </div>
   </header>
 
@@ -984,7 +1138,10 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
   <!-- Timer card -->
   <div class="card" id="timer-card">
     <canvas id="timer-canvas"></canvas>
-    <h2>Current Speaker</h2>
+    <div class="timer-head">
+      <h2 style="margin-bottom:0;">Current Speaker</h2>
+      <span class="timer-current-name" id="timer-current-name">—</span>
+    </div>
     <div id="timer-display">
       <div class="timer-clock" id="timer-clock">0:00</div>
       <div class="timer-speaker" id="timer-speaker">No speaker active</div>
@@ -999,6 +1156,7 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
       </div>
     </div>
   </div>
+  <div id="admin-under-timer-mount"></div>
 
   <!-- Voting card -->
   <div class="card hidden" id="voting-card">
@@ -1097,6 +1255,7 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
     <div class="card">
       <h2>Draw Management</h2>
       <div id="admin-late-alerts"></div>
+      <button class="btn btn-secondary btn-sm" id="admin-demo-seed" style="margin-bottom:8px">Load Demo Participants</button>
       <button class="btn btn-gold" id="admin-lock-draw">Lock Registration &amp; Generate Draw</button>
       <div id="admin-draw-info" class="mt8 muted"></div>
     </div>
@@ -1106,6 +1265,13 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
       <h2>Round Control</h2>
       <div id="admin-round-body">
         <p class="muted">Draw must be locked to control rounds.</p>
+      </div>
+    </div>
+
+    <div class="card" id="admin-speakerlog-card">
+      <h2>Speaker Times</h2>
+      <div id="admin-speakerlog-body">
+        <p class="muted">No completed speeches yet.</p>
       </div>
     </div>
 
@@ -1170,20 +1336,28 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
   </div>
 </div>
 
+<div id="vote-popup-overlay" class="hidden">
+  <div class="vote-popup-box">
+    <div class="vote-popup-title">Voting is open</div>
+    <div class="vote-popup-sub" id="vote-popup-sub">Select one speaker before time runs out.</div>
+    <div class="vote-popup-grid" id="vote-popup-grid"></div>
+  </div>
+</div>
+
 <script>
 // ── State ─────────────────────────────────────────────────────────────────────
 const S = {
-  password: '',
   name: '',
   role: '',
   isAdmin: false,
   _pendingName: '',
-  _nameIsKnown: false,
 
   serverState: null,
   lastVersion: -1,
   pollTimer: null,
   phases: {},
+  dismissedSpinKey: null,
+  activeSpinKey: null,
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -1195,9 +1369,14 @@ function hide(el) { if (typeof el === 'string') el = qs(el); el && el.classList.
 function setText(sel, txt) { const el = typeof sel === 'string' ? qs(sel) : sel; if (el) el.textContent = txt; }
 
 async function api(method, path, body, extraHeaders = {}) {
+  const headerName = (S.name || S._pendingName || '').trim();
   const opts = {
     method,
-    headers: { 'Content-Type': 'application/json', 'x-password': S.password, ...extraHeaders },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-name': headerName,
+      ...extraHeaders,
+    },
   };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(path, opts);
@@ -1213,30 +1392,29 @@ function formatTime(ms) {
   return `${m}:${String(s % 60).padStart(2, '0')}`;
 }
 
+function formatDuration(ms) {
+  if (!Number.isFinite(ms)) return '0:00';
+  const s = Math.max(0, Math.round(ms / 1000));
+  const m = Math.floor(s / 60);
+  return `${m}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function getCurrentParticipant(st) {
+  if (!st || !Array.isArray(st.participants)) return null;
+  const myName = (S.name || '').trim();
+  if (!myName) return null;
+  let me = st.participants.find((p) => p.name === myName);
+  if (me) return me;
+  const lower = myName.toLowerCase();
+  return st.participants.find((p) => (p.name || '').trim().toLowerCase() === lower) || null;
+}
+
 // ── Gate ──────────────────────────────────────────────────────────────────────
 
-// Try auto-rejoin from localStorage on page load
 (async function init() {
   try {
     S.phases = await (await fetch('/api/phases')).json();
   } catch (_) {}
-
-  const saved = JSON.parse(localStorage.getItem('tm21') || 'null');
-  if (saved && saved.name && saved.password) {
-    try {
-      S.password = saved.password;
-      const auth = await api('POST', '/api/auth', { password: saved.password });
-      S.isAdmin = auth.role === 'admin';
-      const res = await api('POST', '/api/join', { name: saved.name, password: saved.password, rejoin: true });
-      S.name = saved.name;
-      S.role = res.participant.role;
-      enterApp();
-      return;
-    } catch (_) {
-      localStorage.removeItem('tm21');
-      S.password = '';
-    }
-  }
   show('#gate-name-step');
 })();
 
@@ -1252,32 +1430,18 @@ qs('#gate-name-btn').addEventListener('click', async () => {
   try {
     const { known } = await (await fetch(`/api/known-name?name=${encodeURIComponent(name)}`)).json();
     S._pendingName = name;
-    S._nameIsKnown = known;
 
     if (known) {
-      const saved = JSON.parse(localStorage.getItem('tm21') || 'null');
-      if (saved && saved.password) {
-        // Have a stored password — attempt silent rejoin
-        try {
-          S.password = saved.password;
-          const auth = await api('POST', '/api/auth', { password: saved.password });
-          S.isAdmin = auth.role === 'admin';
-          const res = await api('POST', '/api/join', { name, password: saved.password, rejoin: true });
-          S.name = name;
-          S.role = res.participant.role;
-          enterApp();
-          return;
-        } catch (_) {
-          localStorage.removeItem('tm21');
-          S.password = '';
-        }
-      }
-      qs('#gate-pwd-title').textContent = 'Welcome back!';
-      qs('#gate-pwd-subtitle').textContent = `Enter the event password to rejoin as ${name}.`;
-    } else {
-      qs('#gate-pwd-title').textContent = 'Almost there!';
-      qs('#gate-pwd-subtitle').textContent = 'Enter the event password to join.';
+      const res = await api('POST', '/api/join', { name, rejoin: true });
+      S.name = name;
+      S.role = res.participant.role;
+      S.isAdmin = !!res.participant.isAdmin;
+      enterApp();
+      return;
     }
+
+    qs('#gate-pwd-title').textContent = 'Almost there!';
+    qs('#gate-pwd-subtitle').textContent = 'Enter the event password to join.';
     hide('#gate-name-step');
     show('#gate-password-step');
     qs('#gate-pwd-input').focus();
@@ -1300,18 +1464,14 @@ qs('#gate-pwd-btn').addEventListener('click', async () => {
   if (!pwd) { show(errEl); errEl.textContent = 'Password required.'; return; }
 
   try {
-    const auth = await api('POST', '/api/auth', { password: pwd });
-    S.password = pwd;
-    S.isAdmin = auth.role === 'admin';
     const name = S._pendingName;
 
     const joinBody = { name, password: pwd, role: 'competitor' };
-    if (S._nameIsKnown) joinBody.rejoin = true;
     const res = await api('POST', '/api/join', joinBody);
 
     S.name = name;
     S.role = res.participant.role;
-    localStorage.setItem('tm21', JSON.stringify({ name, password: pwd }));
+    S.isAdmin = !!res.participant.isAdmin;
     enterApp();
   } catch (e) {
     show(errEl);
@@ -1325,8 +1485,17 @@ function enterApp() {
   hide('#gate');
   show('#app');
   setText('#hdr-name', S.name);
-  setText('#hdr-role', S.isAdmin ? 'Admin' : S.role === 'competitor' ? 'Competitor' : 'Observer');
-  if (S.isAdmin) show('#admin-section');
+  setText('#hdr-role', S.isAdmin ? `Admin · ${S.role === 'competitor' ? 'Competitor' : 'Observer'}` : S.role === 'competitor' ? 'Competitor' : 'Observer');
+  qs('#btn-logout').style.display = '';
+  if (S.isAdmin) {
+    show('#admin-section');
+    const mount = qs('#admin-under-timer-mount');
+    const roundCard = qs('#admin-round-card');
+    const speakerLogCard = qs('#admin-speakerlog-card');
+    if (mount && roundCard) mount.appendChild(roundCard);
+    if (mount && speakerLogCard) mount.appendChild(speakerLogCard);
+  }
+  S._openPopoverOnLoad = true;
   resizeTimerCanvas();
   startPolling();
 }
@@ -1355,6 +1524,14 @@ async function poll() {
 // ── Main render ───────────────────────────────────────────────────────────────
 
 function render(st) {
+  const inRegistration = st.phase === 'registration';
+  qs('#timer-card').style.display = inRegistration ? 'none' : '';
+  qs('#participants-card').style.display = inRegistration ? '' : 'none';
+  qs('#welcome-banner') && (qs('#welcome-banner').style.display = inRegistration ? '' : 'none');
+  if (S._openPopoverOnLoad) {
+    S._openPopoverOnLoad = false;
+    _activePopoverPhase = st.phase;
+  }
   renderPhaseBadge(st);
   renderPhaseTimeline(st);
   renderQuestion(st);
@@ -1362,11 +1539,14 @@ function render(st) {
   renderVoting(st);
   renderParticipants(st);
   renderOptOut(st);
+  syncSpinOverlay(st);
+  syncVotingPopup(st);
   if (S.isAdmin) {
     renderAdminSettings(st);
     renderAdminRoundControl(st);
     renderAdminVotingControl(st);
     renderAdminLateAlerts(st);
+    renderAdminSpeakerLog(st);
   }
 }
 
@@ -1520,14 +1700,13 @@ function renderQuestion(st) {
 
 function renderOptOut(st) {
   const wrap = qs('#opt-out-wrap');
-  if (st.phase !== 'registration' || S.isAdmin) { hide(wrap); return; }
+  if (st.phase !== 'registration') { hide(wrap); return; }
 
-  // Find my current role from server state
-  const me = st.participants.find(p => p.name === S.name);
-  if (!me) { hide(wrap); return; }
+  const me = getCurrentParticipant(st);
+  const role = me?.role || S.role || 'observer';
 
   show(wrap);
-  if (me.role === 'competitor') {
+  if (role === 'competitor') {
     setText('#opt-out-status', 'Registered as Competitor');
     setText('#opt-out-btn', 'Watch instead');
   } else {
@@ -1537,7 +1716,7 @@ function renderOptOut(st) {
 }
 
 qs('#opt-out-btn').addEventListener('click', async () => {
-  const me = S.serverState?.participants.find(p => p.name === S.name);
+  const me = getCurrentParticipant(S.serverState);
   if (!me) return;
   const newRole = me.role === 'competitor' ? 'observer' : 'competitor';
   const verb = newRole === 'observer' ? 'watch as an observer' : 'compete';
@@ -1545,7 +1724,7 @@ qs('#opt-out-btn').addEventListener('click', async () => {
   try {
     const res = await api('POST', '/api/self-opt', { name: S.name, role: newRole });
     S.role = res.role;
-    setText('#hdr-role', S.role === 'competitor' ? 'Competitor' : 'Observer');
+    setText('#hdr-role', S.isAdmin ? `Admin · ${S.role === 'competitor' ? 'Competitor' : 'Observer'}` : S.role === 'competitor' ? 'Competitor' : 'Observer');
     const st = await api('GET', '/api/state');
     S.serverState = st;
     S.lastVersion = st.version;
@@ -1560,12 +1739,22 @@ function updateTimerDisplay(st) {
   const clockEl = qs('#timer-clock');
   const speakerEl = qs('#timer-speaker');
   const pillEl = qs('#timer-pill');
+  const currentNameEl = qs('#timer-current-name');
   const dqOverlay = qs('#dq-overlay');
   const dqOverrideBtn = qs('#dq-override-btn');
 
+  const spin = st.spinState;
+  const spinEnded = !!(spin && Date.now() - spin.startedAt >= spin.durationMs);
+  const headerName = (cs && cs.name) || (spinEnded ? spin.winner : null) || '—';
+  setText(currentNameEl, headerName);
+
   if (!cs || cs.timerState === 'idle') {
     setText(clockEl, '0:00');
-    setText(speakerEl, 'No speaker active');
+    if (spinEnded && spin.winner) {
+      setText(speakerEl, `Next up: ${spin.winner}`);
+    } else {
+      setText(speakerEl, 'No speaker active');
+    }
     pillEl.className = 'timer-status-pill pill-idle';
     setText(pillEl, 'Idle');
     hide(dqOverlay);
@@ -1577,7 +1766,7 @@ function updateTimerDisplay(st) {
     : (cs.stoppedAt ? cs.stoppedAt - cs.startTime : 0);
 
   setText(clockEl, formatTime(elapsed));
-  setText(speakerEl, cs.name || '—');
+  setText(speakerEl, cs.name ? `Speaking now: ${cs.name}` : '—');
 
   if (cs.timerState === 'running') {
     pillEl.className = 'timer-status-pill pill-running';
@@ -1730,9 +1919,106 @@ function updateTimerBorder(st) {
     updateTimerDisplay(st);
     updateVotingCountdown(st);
     updateTimerBorder(st);
+    syncSpinOverlay(st);
+    syncVotingPopup(st);
   }
   requestAnimationFrame(rafLoop);
 })();
+
+function syncVotingPopup(st) {
+  const overlay = qs('#vote-popup-overlay');
+  const grid = qs('#vote-popup-grid');
+  const sub = qs('#vote-popup-sub');
+  const v = st.voting;
+
+  if (!v || !v.active) {
+    hide(overlay);
+    return;
+  }
+
+  const remaining = Math.ceil(v.windowSeconds - (Date.now() - v.openedAt) / 1000);
+  const isEligible = (v.eligibleVoters || []).includes(S.name);
+  if (!isEligible || remaining <= 0) {
+    hide(overlay);
+    return;
+  }
+
+  const myVote = v.votes ? v.votes[S.name] : null;
+  show(overlay);
+  setText(sub, myVote
+    ? `You selected ${myVote}. You can change it until timeout (${remaining}s left).`
+    : `Select one speaker before timeout (${remaining}s left).`);
+
+  const candidates = v.candidates || [];
+  grid.innerHTML = candidates.map((c) => {
+    const selected = c === myVote;
+    return `<button class="vote-popup-choice ${selected ? 'selected' : ''}" onclick='castVote(${JSON.stringify(c)})'>${selected ? '✓ ' : ''}${c}</button>`;
+  }).join('');
+}
+
+function renderWheelRows(names, centerIdx) {
+  const namesEl = qs('#wheel-names');
+  if (!names || names.length === 0) {
+    namesEl.textContent = '—';
+    return;
+  }
+  const offsets = [-2, -1, 0, 1, 2];
+  namesEl.innerHTML = offsets.map((o) => {
+    const idx = (centerIdx + o + names.length) % names.length;
+    const name = names[idx];
+    const cls = [
+      'wheel-row',
+      o === 0 ? 'center' : '',
+      name === S.name ? 'me' : '',
+    ].filter(Boolean).join(' ');
+    return `<div class="${cls}">${name}</div>`;
+  }).join('');
+}
+
+function syncSpinOverlay(st) {
+  const overlay = qs('#wheel-overlay');
+  const namesEl = qs('#wheel-names');
+  const resultEl = qs('#wheel-result');
+  const closeBtn = qs('#wheel-close-btn');
+  const spin = st.spinState;
+
+  if (!spin || !Array.isArray(spin.names) || spin.names.length === 0) {
+    hide(overlay);
+    return;
+  }
+
+  const spinKey = `${spin.groupId}:${spin.startedAt}`;
+  if (S.activeSpinKey !== spinKey) {
+    S.activeSpinKey = spinKey;
+  }
+  if (S.dismissedSpinKey === spinKey) {
+    hide(overlay);
+    return;
+  }
+
+  const elapsed = Date.now() - spin.startedAt;
+  const spinning = elapsed < spin.durationMs;
+  show(overlay);
+
+  if (spinning) {
+    namesEl.classList.add('spinning');
+    closeBtn.style.display = 'none';
+    const centerIdx = Math.floor(elapsed / 70) % spin.names.length;
+    renderWheelRows(spin.names, centerIdx);
+    resultEl.textContent = 'Spinning order...';
+    return;
+  }
+
+  namesEl.classList.remove('spinning');
+  renderWheelRows(spin.names, 0);
+  resultEl.innerHTML = `<strong>Order:</strong> ${spin.names.join(' → ')}`;
+  closeBtn.style.display = '';
+
+  if (elapsed > spin.durationMs + 1800) {
+    S.dismissedSpinKey = spinKey;
+    hide(overlay);
+  }
+}
 
 // ── Groups / Bracket ──────────────────────────────────────────────────────────
 
@@ -1761,18 +2047,33 @@ function renderGroups(st) {
   // ── Group Stage ──
   if (st.phase === 'group' || st.bracket.group_results.length > 0) {
     html += `<p class="phase-badge">${st.settings.stageLabels.group_stage}</p>`;
-    st.groups.forEach((g, i) => {
+    const myGroupIdx = st.participants.find((p) => p.name === S.name)?.groupIndex;
+    const orderedGroups = [...st.groups].sort((a, b) => {
+      if (myGroupIdx == null) return a.id - b.id;
+      const aMine = a.id === myGroupIdx ? 0 : 1;
+      const bMine = b.id === myGroupIdx ? 0 : 1;
+      if (aMine !== bMine) return aMine - bMine;
+      return a.id - b.id;
+    });
+    orderedGroups.forEach((g) => {
+      const displayNum = g.id + 1;
       const active = st.currentSpeaker && st.currentSpeaker.groupId === g.id;
       const result = st.bracket.group_results.find(r => r.groupId === g.id);
+      const spokenSet = new Set(g.spokenMembers || []);
+      const spokenCount = g.members.filter((name) => spokenSet.has(name)).length;
+      const totalCount = g.members.length;
+      const mine = myGroupIdx === g.id;
       html += `<div class="group-card ${g.status === 'done' ? 'done' : ''} ${active ? 'active' : ''}">
-        <div class="group-title">Group ${i + 1} <span style="font-weight:400;color:var(--gray)">(${g.status})</span></div>
+        <div class="group-title">Group ${displayNum}${mine ? ' · Your Group' : ''}<span class="group-progress-badge">${spokenCount}/${totalCount} spoken</span> <span style="font-weight:400;color:var(--gray)">(${g.status})</span></div>
         <ul class="member-list">`;
       const order = g.performanceOrder.length > 0 ? g.performanceOrder : g.members;
       order.forEach(name => {
         const isCurrent = st.currentSpeaker && st.currentSpeaker.name === name;
         const isDq = st.disqualifiedSpeakers && st.disqualifiedSpeakers.includes(name);
         const isWinner = result && result.winner === name;
-        html += `<li class="member-chip ${isCurrent ? 'current' : ''} ${isDq ? 'dq' : ''}">${name}${isDq ? ' ✕' : isWinner ? ' 🏅' : ''}</li>`;
+        const isMe = name === S.name;
+        const spoke = spokenSet.has(name) ? ' ✓' : '';
+        html += `<li class="member-chip ${isCurrent ? 'current' : ''} ${isDq ? 'dq' : ''} ${isMe ? 'me' : ''}">${name}${isDq ? ' ✕' : isWinner ? ' 🏅' : spoke}</li>`;
       });
       html += `</ul>`;
       if (result) {
@@ -1926,12 +2227,15 @@ function renderVoting(st) {
     if (isEligible) {
       let html = '<div class="vote-candidate-grid">';
       (v.candidates || []).forEach(c => {
-        html += `<button class="vote-candidate-btn ${myVote === c ? 'selected' : ''}" onclick="castVote('${c}')">${c}</button>`;
+        html += `<button class="vote-candidate-btn ${myVote === c ? 'selected' : ''}" onclick='castVote(${JSON.stringify(c)})'>${c}</button>`;
       });
       html += '</div>';
       buttonsWrap.innerHTML = html;
     } else {
-      buttonsWrap.innerHTML = '<p class="muted">You are not eligible to vote in this round.</p>';
+      const inCandidateList = (v.candidates || []).includes(S.name);
+      buttonsWrap.innerHTML = inCandidateList
+        ? '<p class="muted">Voting in progress. You are in the active round and cannot vote.</p>'
+        : '<p class="muted">Voting in progress.</p>';
     }
   } else if (v.results) {
     hide(progressWrap);
@@ -1955,7 +2259,7 @@ function renderVoting(st) {
     if (winners.length > 1 && S.isAdmin && !v.tiebreakAdminVoteUsed) {
       html += `<hr class="divider"/><p class="muted">Tie detected. Use tiebreak:</p>
       <div class="btn-row" id="tiebreak-btns">
-        ${winners.map(w => `<button class="btn btn-sm btn-outline" onclick="adminTiebreak('${w}')">${w}</button>`).join('')}
+        ${winners.map(w => `<button class="btn btn-sm btn-outline" onclick='adminTiebreak(${JSON.stringify(w)})'>${w}</button>`).join('')}
       </div>`;
     }
 
@@ -1987,10 +2291,21 @@ function renderParticipants(st) {
         ? `<span class="participant-role-badge badge-competitor">Competitor</span>`
         : `<span class="participant-role-badge badge-observer">Observer</span>`;
     const groupLabel = p.groupIndex != null ? ` · Group ${p.groupIndex + 1}` : '';
+    const speakingNow = st.currentSpeaker && st.currentSpeaker.name === p.name ? ' <span style="color:var(--gold-dark);font-size:0.75rem;">(Speaking)</span>' : '';
     const dqMark = st.disqualifiedSpeakers && st.disqualifiedSpeakers.includes(p.name)
       ? ` <span style="color:var(--red);font-size:0.75rem;">(DQ)</span>` : '';
-    return `<div class="participant-row">${badge}<span>${p.name}${groupLabel}</span>${dqMark}</div>`;
+    const removeBtn = S.isAdmin && st.phase === 'registration'
+      ? `<button class="btn btn-sm" style="margin-left:auto;font-size:0.7rem;padding:2px 8px;opacity:0.6" onclick='adminRemoveParticipant(${JSON.stringify(p.name)})'>✕</button>`
+      : '';
+    return `<div class="participant-row ${p.name === S.name ? 'me' : ''}">${badge}<span>${p.name}${groupLabel}</span>${speakingNow}${dqMark}${removeBtn}</div>`;
   }).join('');
+}
+
+async function adminRemoveParticipant(name) {
+  if (!confirm(`Remove ${name}?`)) return;
+  try {
+    await api('POST', '/api/admin/remove-participant', { name });
+  } catch (e) { alert(e.message); }
 }
 
 // ── Admin settings ────────────────────────────────────────────────────────────
@@ -2028,6 +2343,14 @@ qs('#admin-save-settings').addEventListener('click', async () => {
 
 // ── Admin draw ────────────────────────────────────────────────────────────────
 
+qs('#admin-demo-seed').addEventListener('click', async () => {
+  if (!confirm('Add 12 fictive demo participants as competitors?')) return;
+  try {
+    const res = await api('POST', '/api/admin/demo-seed', {});
+    setText('#admin-draw-info', `Demo: ${res.added} participant(s) added.`);
+  } catch (e) { alert(e.message); }
+});
+
 qs('#admin-lock-draw').addEventListener('click', async () => {
   if (!confirm('Lock registration and generate draw?')) return;
   try {
@@ -2037,9 +2360,10 @@ qs('#admin-lock-draw').addEventListener('click', async () => {
 });
 
 function renderAdminLateAlerts(st) {
+  qs('#admin-demo-seed').style.display = st.phase === 'registration' ? '' : 'none';
   if (st.phase === 'registration') { qs('#admin-late-alerts').innerHTML = ''; return; }
   const lateArrivals = st.participants.filter(p =>
-    p.role === 'observer' && p.groupIndex == null && st.phase === 'group' &&
+    p.joinedAfterRegistration === true && p.wantsToCompete === true && p.groupIndex == null && st.phase === 'group' &&
     st.groups.some(g => g.status === 'pending')
   );
   const alerts = qs('#admin-late-alerts');
@@ -2052,7 +2376,7 @@ function renderAdminLateAlerts(st) {
       <span>⚠ Late arrival: <strong>${p.name}</strong></span>
       <div style="display:flex;gap:6px;align-items:center;">
         <select id="late-group-${p.name}" style="padding:4px 6px;font-size:0.8rem;">${opts}</select>
-        <button class="btn btn-sm btn-gold" onclick="adminAssignLate('${p.name}')">Assign</button>
+        <button class="btn btn-sm btn-gold" onclick='adminAssignLate(${JSON.stringify(p.name)})'>Assign</button>
       </div>
     </div>`;
   }).join('');
@@ -2073,7 +2397,6 @@ function timerControls() {
     <button class="btn btn-green btn-sm" onclick="adminTimer('start')">▶ Start</button>
     <button class="btn btn-outline btn-sm" onclick="adminTimer('stop')">⏸ Stop</button>
     <button class="btn btn-outline btn-sm" onclick="adminTimer('restart')">↺ Restart</button>
-    <button class="btn btn-outline btn-sm" onclick="adminAdvance('next-speaker')">⏭ Next</button>
   </div>`;
 }
 
@@ -2083,7 +2406,7 @@ function dqSection(st) {
   return `<hr class="divider" /><div style="font-size:0.8rem;font-weight:700;color:var(--red);margin-bottom:4px;">Disqualified</div>` +
     dqList.map(name => `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
       <span style="font-size:0.82rem;">${name}</span>
-      <button class="btn btn-sm btn-outline" onclick="adminOverrideDQ('${name}')">Override</button>
+      <button class="btn btn-sm btn-outline" onclick='adminOverrideDQ(${JSON.stringify(name)})'>Override</button>
     </div>`).join('');
 }
 
@@ -2103,14 +2426,19 @@ function renderAdminRoundControl(st) {
     const speakerQueue = activeGroup
       ? (activeGroup.performanceOrder.length > 0 ? activeGroup.performanceOrder : activeGroup.members)
       : [];
+    const spoken = new Set(activeGroup?.spokenMembers || []);
+    const allGroupSpoken = activeGroup ? activeGroup.members.every((n) => spoken.has(n)) : false;
 
     html += `<button class="btn btn-primary btn-sm" onclick="adminDrawQuestion()">🎲 Draw Question</button>`;
     html += `<hr class="divider" />${timerControls()}`;
     if (speakerQueue.length > 0) {
       html += `<div style="margin-top:8px;font-size:0.82rem;font-weight:700;">Set Speaker</div>
       <div class="btn-row">${speakerQueue.map(n =>
-        `<button class="btn btn-sm btn-outline" onclick="adminSetSpeaker('${n}',${activeGroup?.id ?? 0})">${n}</button>`
+        `<button class="btn btn-sm btn-outline" ${spoken.has(n) ? 'style="opacity:0.55"' : ''} onclick='adminSetSpeaker(${JSON.stringify(n)},${activeGroup?.id ?? 0})'>${spoken.has(n) ? '✓ ' : ''}${n}</button>`
       ).join('')}</div>`;
+    }
+    if (activeGroup && allGroupSpoken) {
+      html += `<p class="muted" style="margin-top:8px;">All Group ${activeGroup.id + 1} speakers finished. Open voting in Voting Control.</p>`;
     }
     html += dqSection(st);
   }
@@ -2131,7 +2459,7 @@ function renderAdminRoundControl(st) {
         const groupLabel = gi === 0 ? 'A' : 'B';
         (st.bracket.quarter_groups[gi] || []).forEach(name => {
           if (!spoken.includes(name) && !(st.currentSpeaker && st.currentSpeaker.name === name)) {
-            html += `<button class="btn btn-sm btn-outline" onclick="adminSetSpeaker('${name}',${gi})" style="border-color:${gi===0?'#0081C8':'#EE334E'}">${groupLabel}: ${name}</button>`;
+            html += `<button class="btn btn-sm btn-outline" onclick='adminSetSpeaker(${JSON.stringify(name)},${gi})' style="border-color:${gi===0?'#0081C8':'#EE334E'}">${groupLabel}: ${name}</button>`;
           }
         });
       });
@@ -2162,7 +2490,7 @@ function renderAdminRoundControl(st) {
       html += `<div style="margin-top:8px;font-size:0.82rem;font-weight:700;">Select Speaker</div><div class="btn-row">`;
       pair.forEach(name => {
         const hasSpoken = spoken.includes(name);
-        html += `<button class="btn btn-sm btn-outline ${hasSpoken ? '' : ''}" ${hasSpoken ? 'style="opacity:0.5"' : ''} onclick="adminSetSpeaker('${name}',${activePairIdx})">${hasSpoken ? '✓ ' : ''}${name}</button>`;
+        html += `<button class="btn btn-sm btn-outline ${hasSpoken ? '' : ''}" ${hasSpoken ? 'style="opacity:0.5"' : ''} onclick='adminSetSpeaker(${JSON.stringify(name)},${activePairIdx})'>${hasSpoken ? '✓ ' : ''}${name}</button>`;
       });
       html += `</div>`;
     }
@@ -2177,7 +2505,7 @@ function renderAdminRoundControl(st) {
     if (finalists.length > 0) {
       html += `<div style="margin-top:8px;font-size:0.82rem;font-weight:700;">Select Finalist</div><div class="btn-row">`;
       finalists.forEach(name => {
-        html += `<button class="btn btn-sm btn-outline" onclick="adminSetSpeaker('${name}',0)">${name}</button>`;
+        html += `<button class="btn btn-sm btn-outline" onclick='adminSetSpeaker(${JSON.stringify(name)},0)'>${name}</button>`;
       });
       html += `</div>`;
     }
@@ -2220,42 +2548,22 @@ async function adminOverrideDQ(name) {
 }
 
 async function adminSpinWheel(groupId) {
-  const overlay = qs('#wheel-overlay');
-  const namesEl = qs('#wheel-names');
-  const resultEl = qs('#wheel-result');
-  show(overlay);
-  namesEl.textContent = '…';
-  namesEl.className = '';
-  resultEl.textContent = '';
-
   try {
-    const res = await api('POST', '/api/admin/spin-wheel', { groupId });
-    const order = res.performanceOrder;
-
-    let i = 0;
-    let delay = 60;
-    namesEl.classList.add('spinning');
-
-    function step() {
-      namesEl.textContent = order[i % order.length];
-      i++;
-      delay = Math.min(delay * 1.08, 400);
-      if (delay < 380) {
-        setTimeout(step, delay);
-      } else {
-        namesEl.classList.remove('spinning');
-        namesEl.textContent = order[0];
-        resultEl.innerHTML = `<strong>Order:</strong> ${order.join(' → ')}`;
-      }
-    }
-    step();
+    await api('POST', '/api/admin/spin-wheel', { groupId });
+    const st = await api('GET', '/api/state');
+    S.serverState = st;
+    S.lastVersion = st.version;
+    S.dismissedSpinKey = null;
+    render(st);
   } catch (e) {
-    hide(overlay);
     alert(e.message);
   }
 }
 
-qs('#wheel-close-btn').addEventListener('click', () => hide('#wheel-overlay'));
+qs('#wheel-close-btn').addEventListener('click', () => {
+  if (S.activeSpinKey) S.dismissedSpinKey = S.activeSpinKey;
+  hide('#wheel-overlay');
+});
 
 async function adminCompleteGroup(groupId) {
   const winnerEl = qs(`#winner-${groupId}`);
@@ -2319,7 +2627,13 @@ function renderAdminVotingControl(st) {
     candidates = activeGroup.members;
     completeAction = () => adminCompleteGroup(activeGroup.id);
     completeLabel = '✓ Complete Group';
-    canOpenVoting = true;
+    const spoken = new Set(activeGroup.spokenMembers || []);
+    const allSpoken = activeGroup.members.every((n) => spoken.has(n));
+    canOpenVoting = allSpoken;
+    if (!allSpoken && !v.active && !v.results) {
+      body.innerHTML = `<p class="muted">Waiting for all Group ${activeGroup.id + 1} speakers before voting (${spoken.size}/${activeGroup.members.length}).</p>`;
+      return;
+    }
 
   } else if (st.phase === 'quarter_debate') {
     const spoken = st.bracket.quarter_spoken || [];
@@ -2388,12 +2702,33 @@ function renderAdminVotingControl(st) {
     const [c1, c2] = st.bracket.third_place_candidates;
     html += `<hr class="divider" /><p class="muted" style="margin-bottom:6px;">Cast decisive vote for 3rd place:</p>
     <div class="btn-row">
-      <button class="btn btn-sm btn-outline" onclick="adminRevealPodium('${c1.name}')">${c1.name}</button>
-      <button class="btn btn-sm btn-outline" onclick="adminRevealPodium('${c2.name}')">${c2.name}</button>
+      <button class="btn btn-sm btn-outline" onclick='adminRevealPodium(${JSON.stringify(c1.name)})'>${c1.name}</button>
+      <button class="btn btn-sm btn-outline" onclick='adminRevealPodium(${JSON.stringify(c2.name)})'>${c2.name}</button>
     </div>`;
   }
 
   body.innerHTML = html;
+}
+
+function renderAdminSpeakerLog(st) {
+  const body = qs('#admin-speakerlog-body');
+  if (!body) return;
+  const rows = (st.speakerLog || []).slice().sort((a, b) => (a.spokenAt || 0) - (b.spokenAt || 0));
+  if (!rows.length) {
+    body.innerHTML = '<p class="muted">No completed speeches yet.</p>';
+    return;
+  }
+
+  body.innerHTML = `<div class="speaker-log-list">${rows.map((r) => {
+    const phaseLabel = r.phase === 'group'
+      ? `Group ${typeof r.groupId === 'number' ? r.groupId + 1 : '-'}`
+      : r.phase.replace('_', ' ');
+    return `<div class="speaker-log-row ${r.name === S.name ? 'me' : ''}">
+      <span>${r.name} <span class="muted">(${phaseLabel})</span></span>
+      <span class="t">${formatDuration(r.durationMs)}</span>
+      <span class="${r.disqualified ? 'dq' : 'muted'}">${r.disqualified ? 'DQ' : 'OK'}</span>
+    </div>`;
+  }).join('')}</div>`;
 }
 
 async function adminOpenVoting(candidates, excludeParticipants) {
@@ -2462,8 +2797,11 @@ qs('#admin-close').addEventListener('click', async () => {
 });
 qs('#admin-reset').addEventListener('click', async () => {
   if (!confirm('RESET everything? All state will be lost.')) return;
-  localStorage.removeItem('tm21');
   await adminAdvance('reset');
+  location.reload();
+});
+
+qs('#btn-logout').addEventListener('click', () => {
   location.reload();
 });
 </script>
