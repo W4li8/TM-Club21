@@ -4,61 +4,124 @@ phases:
     description: "Participants join and register for the event. The admin will lock registration and generate the draw when everyone is ready — groups are then assigned randomly."
   group_stage:
     name: "Group Stage"
-    description: "Competitors speak in their assigned group, all on the same drawn question. Audience and fellow participants vote for the best speaker. Each group's winner advances to the next round."
+    description: "Competitors speak in their assigned group. Each participant is drawn a unique question from the group's theme. The audience and fellow participants vote for the best speaker. Each group's winner advances to the Team Debate."
+  break:
+    name: "Break"
+    description: "A short intermission before the debate rounds begin. Relax, reflect, and recharge."
   quarter_debate:
-    name: "Quarter-Debate"
-    description: "Group stage winners face off on a challenging leadership dilemma. The best speaker from each match advances to the Semifinal."
+    name: "Team Debate"
+    description: "Group stage winners are split into two teams of four. Both teams debate both sides of the same question, alternating speakers until all eight have spoken. The audience then votes for the best team. The winning team advances to the Semifinal."
   semi_final:
     name: "Semifinal"
-    description: "The remaining competitors face truly impossible choice questions. Only the strongest speakers make it to the Final."
+    description: "The remaining four competitors face roleplay debate scenarios in two 1v1 matchups. Each pair takes opposing sides. The audience votes for the best speaker. The top two go to the Final; 3rd place is decided by vote counts."
   final:
     name: "Final"
-    description: "The last competitors standing face the ultimate question on the human condition. The winner is crowned Table Topics Olympic Champion."
+    description: "The last two competitors each give a speech on the same personal question. The audience votes for the champion."
   closed:
     name: "Closed"
     description: "The event has concluded. Congratulations to all participants and thank you for joining!"
 
-group_stage:
-  theme: "Unexpected Situations"
-  questions:
-    - "You arrive at work to find your desk replaced by a ball pit. What do you do?"
-    - "Your GPS suddenly speaks only in riddles. How do you navigate home?"
-    - "You wake up with the ability to speak to animals, but they only want to complain. How do you handle your day?"
-    - "You're presenting to the board when your PowerPoint turns into a slideshow of your childhood photos. How do you recover?"
-    - "You discover your morning coffee has been replaced with a truth serum. What happens next?"
-    - "Your phone autocorrects every message you send to a haiku. How do you communicate for the rest of the day?"
-    - "You're named emergency mayor of your town for 24 hours. What's your first act?"
-    - "You open your fridge to find it's now a portal to another dimension. What do you do?"
-    - "You receive an email confirming you've been elected president of a country you've never heard of. How do you respond?"
-    - "Your shadow has started disagreeing with your decisions. How do you negotiate with it?"
+group_themes:
+  - theme: "The Best Object Seller"
+    questions:
+      - "Sell us a plant — why can no one live without it?"
+      - "Sell us a book about national parks — why does everyone need it?"
+      - "Sell us this pink umbrella — why is it a must-have?"
+      - "Sell us a candle — why is it more than decoration?"
+      - "Sell us kombucha — why should everyone drink it?"
+      - "Sell us a reusable water bottle — why is it indispensable?"
+      - "Sell us a pair of sunglasses — why is it essential in daily life?"
+      - "Sell us a notebook — why can't anyone live without it?"
+
+  - theme: "Would You Rather… (No Easy Way Out)"
+    questions:
+      - "Would you rather always tell the truth… or always lie?"
+      - "Would you rather swim from Los Angeles to San Francisco… or run from Los Angeles to New York?"
+      - "Would you rather eat a live scorpion… or give up meat for the rest of your life?"
+      - "Would you rather be completely alone for the rest of your life… or always be surrounded by people who don't understand you?"
+      - "Would you rather have unlimited success but be unhappy… or be truly happy but never achieve your goals?"
+      - "Would you rather be admired by everyone… or deeply understood by one person?"
+      - "Would you rather know exactly how your life will unfold… or be completely surprised every day?"
+      - "Would you rather always arrive too early… or always arrive slightly late?"
+
+  - theme: "Critical Situation: LA Edition"
+    questions:
+      - "You're lost in Los Angeles traffic with no GPS, your phone is dead, and you're late for an important meeting — what do you do and why?"
+      - "You're at a café in Santa Monica when a well-known producer overhears you and offers you a chance to pitch your idea right now. You have no slides, no preparation, and only one shot — what do you do, and why?"
+      - "You've just signed a lease in LA and finally feel stable. Suddenly you're offered an incredible opportunity in another city that could accelerate your career — but it means leaving everything behind again. What do you do, and why?"
+      - "You can solve a major global problem, but only if you act in a way that goes against your personal values. What do you do, and why?"
+      - "You are a researcher who has just discovered something groundbreaking that could transform the world, but revealing it could also destabilize society. What do you do, and why?"
+      - "You have developed a powerful tool capable of accessing even the most secure institutions. It could be used for good… or cause serious harm. Do you release it or keep it hidden — and why?"
+      - "You're invited to collaborate on a high-profile project in LA, but the team seems disorganized and risky. It could boost your career or damage your reputation. You must decide quickly — what do you do, and why?"
+      - "You uncover information that proves a major system people rely on is flawed, but exposing it would create panic and uncertainty. What do you do, and why?"
+
+  - theme: "Constrained Superpower"
+    questions:
+      - "You can swap your life with someone for one day — who would it be, and why?"
+      - "You can talk to animals, but only one species — which would you choose, and why?"
+      - "You can become invisible, but only for 5 minutes — what would you do?"
+      - "You can be the president of one country for 4 years — which country would you choose, and why?"
+      - "You can make anything disappear, but only for 1 minute — how would you use it?"
+      - "You can teleport, but only to places you've already been — where would you go first?"
+      - "You can stop time, but only once in your life — when would you use it?"
+      - "You can see the future, but only 1 minute ahead — how could this help you?"
+
+  - theme: "A World-Changing Invention"
+    questions:
+      - "Present a machine that gives you the perfect outfit every day — and convince us it would transform the world."
+      - "Present a remote control that lets you skip boring conversations — and convince us it would transform the world."
+      - "Present a pair of glasses that reveal people's true intentions — and convince us it would transform the world."
+      - "Present a device that lets you replay your favorite memories — and convince us it would transform the world."
+      - "Present a tool that helps you relax instantly and reduce stress — and convince us it would transform the world."
+      - "Present an alarm clock that wakes you up at the perfect moment — and convince us it would transform the world."
+      - "Present a translator that lets you talk to anyone in any language instantly — and convince us it would transform the world."
+      - "Present a device that turns your thoughts into emojis above your head — and convince us it would transform the world."
+
+  - theme: "You're the Expert"
+    questions:
+      - "As a positive psychology researcher, explain why success does not always lead to happiness."
+      - "As a decision scientist, explain why having more choices can actually make decisions harder."
+      - "As a neuroscientist, explain why time flies when you're having fun — and how to slow it down."
+      - "As a cognitive psychologist, explain why bad decisions can sometimes be the best ones."
+      - "As a habit expert, convince us that breaking your habits is the key to success."
+      - "As a risk analyst, explain why uncertainty makes life more exciting — and better."
+      - "As a social psychologist, explain why caring less about others' opinions makes you stronger."
+      - "As a sleep scientist, convince us that taking naps during the day should be mandatory."
+
+  - theme: "Defend an Idea"
+    questions:
+      - "Why might failure actually be more valuable than success? Convince us."
+      - "Can overthinking actually lead to better decisions? Make the case."
+      - "Why might being misunderstood be a hidden strength? Convince us."
+      - "How could doing less lead to greater success? Convince us."
+      - "Do you believe luck matters more than talent? Defend your position."
+      - "Why could uncertainty be better than stability? Convince us."
+      - "In a world that celebrates spontaneity, why is routine essential for a good life? Convince us."
+      - "Why might saying 'no' be more powerful than saying 'yes'? Convince us."
+
+  - theme: "Imposed Story"
+    questions:
+      - "Tell a story that begins with: 'Everything seemed normal…'"
+      - "Tell a story about finding something unexpected."
+      - "Tell a story where something suddenly goes wrong."
+      - "Tell a story about a difficult decision you had to make."
+      - "Tell a story set in the future."
+      - "Tell a story about a personal failure."
+      - "Tell a story that includes a surprising moment."
+      - "Tell a story that ends with a lesson learned."
 
 quarter_debate:
-  theme: "Leadership Dilemmas"
+  theme: "Open Question"
   questions:
-    - "Your team unanimously wants to pursue a plan you know will fail. How do you lead?"
-    - "You discover your most productive employee has been lying on their resume. What do you do?"
-    - "You must choose between promoting your most loyal team member or the most skilled outsider. Which do you choose and why?"
-    - "Your company must cut 20% of staff. How do you decide who stays and who goes?"
-    - "A whistleblower on your team reveals a problem you were about to quietly fix yourself. How do you respond?"
-    - "You're offered a promotion that requires relocating your entire team to a new country. How do you handle this?"
-    - "Your mentor gives you advice that contradicts everything you've learned from experience. What do you do?"
-    - "You realize mid-project that the entire strategy is wrong, but the team is energized and on track. Do you speak up?"
+    - "Should cosmetic surgery be covered by health insurance? If so, under what circumstances — and why or why not?"
 
 semi_final:
-  theme: "Impossible Choices"
+  theme: "Roleplay"
   questions:
-    - "You can end world hunger but everyone must give up their favorite food forever. Do you flip the switch?"
-    - "You can give every person on Earth one extra hour per day, but you must give up two hours of your own. Do you accept?"
-    - "You're offered the ability to read minds, but you can never turn it off. Do you take it?"
-    - "You can fix climate change permanently, but humans must live without the internet for ten years. Do you agree?"
-    - "You can make one law that the entire world must follow for the next century. What is it and why?"
-    - "You can live to 200 years old but must spend every third year in complete isolation. Do you accept?"
+    - "The Promotion Conversation — Speaker A (Employee): you believe you deserve a promotion and ask for it. Speaker B (Manager): you don't think they're ready yet. Explain why. Take your sides and make your case."
+    - "Work From Home Debate — Speaker A (Employee): you want to work fully remote. Speaker B (Manager): you believe employees should come to the office. Take your sides and make your case."
 
 final:
-  theme: "The Human Condition"
+  theme: "The Toastmasters Connection"
   questions:
-    - "If you could bottle one emotion and share it with the world, what would it be and why?"
-    - "What is the one thing humanity must learn in the next ten years to survive?"
-    - "If failure were impossible, what would you attempt tomorrow?"
-    - "What does it mean to truly lead — and have you ever done it?"
-    - "If you could rewrite one rule of society from scratch, which would it be and what would replace it?"
+    - "Tell us about a time when you wished a friend of yours had joined Toastmasters."

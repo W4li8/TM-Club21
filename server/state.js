@@ -11,7 +11,7 @@ const defaultSettings = {
   breakMinutes: 5,
   stageLabels: {
     group_stage: 'Group Stage',
-    quarter_debate: 'Quarter-Debate',
+    quarter_debate: 'Team Debate',
     semi_final: 'Semifinal',
     final: 'Final',
   },
@@ -69,6 +69,8 @@ let state = {
   bracket: freshBracket(),
   adminList: [],
   disqualifiedSpeakers: [],
+  breakStartedAt: null,
+  breakDurationMinutes: null,
   version: 0,
 };
 
@@ -102,6 +104,8 @@ function resetState() {
     bracket: freshBracket(),
     adminList: [],
     disqualifiedSpeakers: [],
+    breakStartedAt: null,
+    breakDurationMinutes: null,
     version: 0,
   };
 }

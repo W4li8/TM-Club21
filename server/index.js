@@ -5,7 +5,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 const express = require('express');
 const path = require('path');
 const { getState, bump, resetState } = require('./state');
-const { loadQuestions, getRandomUnusedQuestion, getPhases } = require('./questions');
+const { loadQuestions, getGroupTheme, getRandomUnusedGroupQuestion, getRandomUnusedQuestion, getPhases } = require('./questions');
 
 const app = express();
 app.use(express.json());
@@ -263,7 +263,8 @@ app.post('/api/admin/lock-draw', (req, res) => {
   const shuffled = [...competitors].sort(() => Math.random() - 0.5);
   const groups = [];
   for (let i = 0; i < n; i++) {
-    groups.push({ id: i, members: [], performanceOrder: [], spokenMembers: [], status: 'pending' });
+    const themeObj = getGroupTheme(i);
+    groups.push({ id: i, members: [], performanceOrder: [], spokenMembers: [], status: 'pending', themeIndex: i, theme: themeObj ? themeObj.theme : '' });
   }
   shuffled.forEach((p, idx) => {
     const gIdx = idx % n;
@@ -307,8 +308,21 @@ app.post('/api/admin/draw-question', (req, res) => {
   if (!checkAdmin(req, res)) return;
   const st = getState();
 
+  if (st.phase === 'group') {
+    // Each participant gets their own question from the group's assigned theme.
+    // Questions are NOT marked used until the timer actually stops (so admin can redraw freely).
+    const activeGroup = st.groups.find((g) => g.status === 'active');
+    if (!activeGroup) return res.status(400).json({ error: 'No active group' });
+    const themeIndex = activeGroup.themeIndex ?? 0;
+    const used = st.usedQuestions.group_stage || [];
+    const q = getRandomUnusedGroupQuestion(themeIndex, used);
+    if (!q) return res.status(400).json({ error: 'No questions remaining for this group\'s theme' });
+    st.currentQuestion = { stage: 'group_stage', theme: q.theme, text: q.text };
+    bump();
+    return res.json({ ok: true, question: st.currentQuestion });
+  }
+
   const stageMap = {
-    group: 'group_stage',
     quarter_debate: 'quarter_debate',
     semi_final: 'semi_final',
     final: 'final',
@@ -352,6 +366,14 @@ app.post('/api/admin/timer', (req, res) => {
       st.currentSpeaker.timerState = 'stopped';
       st.currentSpeaker.stoppedAt = stoppedAt;
       st.currentSpeaker.disqualified = dq;
+
+      // Mark the current question as used now that a speech has actually happened.
+      // Group-stage questions are not marked on draw (to allow redraw); all others are.
+      if (st.currentQuestion && st.phase === 'group') {
+        if (!st.usedQuestions.group_stage.includes(st.currentQuestion.text)) {
+          st.usedQuestions.group_stage.push(st.currentQuestion.text);
+        }
+      }
       if (dq) {
         const name = st.currentSpeaker.name;
         if (name && !st.disqualifiedSpeakers.includes(name)) {
@@ -651,8 +673,16 @@ app.post('/api/admin/advance', (req, res) => {
       res.status(400).json({ error: 'A winner must be selected before completing the group.' });
       return;
     }
-    const runner_up = vRunnerUp;
-    const runner_up_votes = vRunnerVotes;
+
+    // Only use voting runner-up if that voting session was actually for this group.
+    // st.voting.results persists across groups; check that at least one candidate
+    // belongs to this group before trusting the runner-up value.
+    const groupMemberSet = new Set(group.members);
+    const votingCandidates = st.voting.candidates || [];
+    const votingWasForThisGroup = votingCandidates.some((c) => groupMemberSet.has(c)) && !!st.voting.results;
+    const runner_up = (votingWasForThisGroup && vRunnerUp && groupMemberSet.has(vRunnerUp) && vRunnerUp !== winner)
+      ? vRunnerUp : null;
+    const runner_up_votes = runner_up ? vRunnerVotes : 0;
 
     const idx = st.bracket.group_results.findIndex((r) => r.groupId === groupId);
     const result = { groupId, winner, runner_up, runner_up_votes };
@@ -668,13 +698,29 @@ app.post('/api/admin/advance', (req, res) => {
     st.currentQuestion = null;
     bump();
 
+  } else if (action === 'start-break') {
+    const allGroupsDone = st.groups.length > 0 && st.groups.every((g) => g.status === 'done');
+    if (!allGroupsDone) { res.status(400).json({ error: 'Not all groups are done' }); return; }
+    st.phase = 'break';
+    st.breakStartedAt = Date.now();
+    st.breakDurationMinutes = (data && data.breakMinutes != null) ? Number(data.breakMinutes) : (st.settings.breakMinutes || 5);
+    bump();
+
   } else if (action === 'start-quarter') {
     const results = st.bracket.group_results;
-    const winners = results.map((r) => r.winner).filter(Boolean);
-    const runnersUp = results
-      .filter((r) => r.runner_up)
-      .map((r) => ({ name: r.runner_up, votes: r.runner_up_votes }))
-      .sort((a, b) => b.votes - a.votes);
+    const winners = [...new Set(results.map((r) => r.winner).filter(Boolean))];
+    const winnerSet = new Set(winners);
+
+    // Runners-up: exclude anyone already a winner, deduplicate (keep highest votes if same name appears twice)
+    const runnerMap = new Map();
+    results.forEach((r) => {
+      if (!r.runner_up || winnerSet.has(r.runner_up)) return;
+      const existing = runnerMap.get(r.runner_up);
+      if (!existing || r.runner_up_votes > existing.votes) {
+        runnerMap.set(r.runner_up, { name: r.runner_up, votes: r.runner_up_votes });
+      }
+    });
+    const runnersUp = [...runnerMap.values()].sort((a, b) => b.votes - a.votes);
 
     const needed = Math.max(0, 8 - winners.length);
     const advancingRunners = runnersUp.slice(0, needed).map((r) => r.name);

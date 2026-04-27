@@ -1093,7 +1093,7 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
   <div class="card" id="timer-card">
     <canvas id="timer-canvas"></canvas>
     <div class="timer-head">
-      <h2 style="margin-bottom:0;">Current Speaker</h2>
+      <h2 style="margin-bottom:0;" id="timer-card-title">Current Speaker</h2>
       <span class="timer-current-name" id="timer-current-name">—</span>
     </div>
     <div id="timer-display">
@@ -1196,8 +1196,8 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
         <input type="text" id="set-label-group_stage" value="Group Stage" />
       </div>
       <div class="form-group">
-        <label>Quarter-Debate label</label>
-        <input type="text" id="set-label-quarter_debate" value="Quarter-Debate" />
+        <label>Team Debate label</label>
+        <input type="text" id="set-label-quarter_debate" value="Team Debate" />
       </div>
       <div class="form-group">
         <label>Semifinal label</label>
@@ -1246,7 +1246,8 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
     <div class="card">
       <h2>Phase Control</h2>
       <div class="btn-row">
-        <button class="btn btn-outline btn-sm" id="admin-start-quarter">→ Quarter-Debate</button>
+        <button class="btn btn-outline btn-sm" id="admin-start-break">☕ Start Break</button>
+        <button class="btn btn-outline btn-sm" id="admin-start-quarter">→ Team Debate</button>
         <button class="btn btn-outline btn-sm" id="admin-start-semi">→ Semifinal</button>
         <button class="btn btn-outline btn-sm" id="admin-start-final">→ Final</button>
         <button class="btn btn-outline btn-sm" id="admin-close">Close Event</button>
@@ -1288,12 +1289,12 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
 <!-- Quarter groups preview / drag-drop editor -->
 <div id="quarter-preview-overlay" class="hidden">
   <div class="quarter-preview-box">
-    <h3>Quarter-Debate Groups</h3>
+    <h3>Team Debate Groups</h3>
     <p class="muted" style="margin-bottom:14px;font-size:0.82rem;">Drag names between groups to balance matchups, then confirm.</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" id="quarter-preview-groups"></div>
     <div class="btn-row" style="margin-top:16px;">
       <button class="btn btn-outline btn-sm" onclick="cancelQuarterPreview()">Cancel</button>
-      <button class="btn btn-gold" onclick="confirmQuarterPreview()">Confirm &amp; Start Quarter-Debate</button>
+      <button class="btn btn-gold" onclick="confirmQuarterPreview()">Confirm &amp; Start Team Debate</button>
     </div>
   </div>
 </div>
@@ -1509,6 +1510,7 @@ function renderPhaseBadge(st) {
   const labels = {
     registration: 'Registration',
     group: st.settings.stageLabels.group_stage,
+    break: 'Break',
     quarter_debate: st.settings.stageLabels.quarter_debate,
     semi_final: st.settings.stageLabels.semi_final,
     final: st.settings.stageLabels.final,
@@ -1519,10 +1521,11 @@ function renderPhaseBadge(st) {
 
 // ── Phase timeline ────────────────────────────────────────────────────────────
 
-const PHASE_ORDER = ['registration', 'group', 'quarter_debate', 'semi_final', 'final'];
+const PHASE_ORDER = ['registration', 'group', 'break', 'quarter_debate', 'semi_final', 'final'];
 const PHASE_YAML_KEYS = {
   registration: 'registration',
   group: 'group_stage',
+  break: 'break',
   quarter_debate: 'quarter_debate',
   semi_final: 'semi_final',
   final: 'final',
@@ -1577,6 +1580,7 @@ function phaseLabel(phase, st) {
   const map = {
     registration: 'Registration',
     group: st.settings.stageLabels.group_stage,
+    break: 'Break',
     quarter_debate: st.settings.stageLabels.quarter_debate,
     semi_final: st.settings.stageLabels.semi_final,
     final: st.settings.stageLabels.final,
@@ -1642,13 +1646,10 @@ function estimatePhaseDuration(phase, st) {
 }
 
 function renderQuestion(st) {
-  if (st.currentQuestion) {
-    show('#question-display');
-    setText('#q-theme', st.currentQuestion.theme);
-    setText('#q-text', st.currentQuestion.text);
-  } else {
-    hide('#question-display');
-  }
+  if (st.phase === 'break' || !st.currentQuestion) { hide('#question-display'); return; }
+  show('#question-display');
+  setText('#q-theme', st.currentQuestion.theme);
+  setText('#q-text', st.currentQuestion.text);
 }
 
 // ── Opt-out toggle ────────────────────────────────────────────────────────────
@@ -1695,9 +1696,26 @@ function updateTimerDisplay(st) {
   const speakerEl = qs('#timer-speaker');
   const pillEl = qs('#timer-pill');
   const currentNameEl = qs('#timer-current-name');
+  const titleEl = qs('#timer-card-title');
   const dqOverlay = qs('#dq-overlay');
   const dqOverrideBtn = qs('#dq-override-btn');
 
+  // Break phase: show countdown instead of speaker timer
+  if (st.phase === 'break') {
+    const breakMs = (st.breakDurationMinutes || 0) * 60 * 1000;
+    const elapsed = st.breakStartedAt ? (Date.now() - st.breakStartedAt) : 0;
+    const remaining = Math.max(0, breakMs - elapsed);
+    setText(titleEl, 'Break');
+    setText(currentNameEl, 'Intermission');
+    setText(clockEl, formatTime(remaining));
+    setText(speakerEl, remaining > 0 ? 'Break in progress' : 'Break complete — ready for Team Debate');
+    pillEl.className = remaining > 0 ? 'timer-status-pill pill-running' : 'timer-status-pill pill-idle';
+    setText(pillEl, remaining > 0 ? 'Break' : 'Done');
+    hide(dqOverlay);
+    return;
+  }
+
+  setText(titleEl, 'Current Speaker');
   setText(currentNameEl, (cs && cs.name) || '—');
 
   if (!cs || cs.timerState === 'idle') {
@@ -1810,6 +1828,8 @@ function setTimerFlash(cls) {
 }
 
 function updateTimerBorder(st) {
+  if (st.phase === 'break') { clearTimerCanvas(); setTimerFlash(null); return; }
+
   const cs = st.currentSpeaker;
 
   if (!cs || cs.timerState === 'idle' || !cs.startTime) {
@@ -1917,8 +1937,9 @@ function renderGroups(st) {
       const spokenCount = g.members.filter((name) => spokenSet.has(name)).length;
       const totalCount = g.members.length;
       const mine = myGroupIdx === g.id;
+      const themeTag = g.theme ? ` <span style="font-size:0.7rem;color:var(--navy-light);font-weight:600;letter-spacing:0;">· ${g.theme}</span>` : '';
       html += `<div class="group-card ${g.status === 'done' ? 'done' : ''} ${active ? 'active' : ''}">
-        <div class="group-title">Group ${displayNum}${mine ? ' · Your Group' : ''}<span class="group-progress-badge">${spokenCount}/${totalCount} spoken</span> <span style="font-weight:400;color:var(--gray)">(${g.status})</span></div>
+        <div class="group-title">Group ${displayNum}${mine ? ' · Your Group' : ''}${themeTag}<span class="group-progress-badge">${spokenCount}/${totalCount} spoken</span> <span style="font-weight:400;color:var(--gray)">(${g.status})</span></div>
         <ul class="member-list">`;
       const order = g.performanceOrder.length > 0 ? g.performanceOrder : g.members;
       order.forEach(name => {
@@ -1967,12 +1988,26 @@ function renderGroups(st) {
   // ── Quarter-Debate ──
   if (st.bracket.quarter_groups && (st.bracket.quarter_groups[0].length > 0 || st.bracket.quarter_groups[1].length > 0)) {
     html += `<p class="phase-badge" style="margin-top:12px;">${st.settings.stageLabels.quarter_debate}</p>`;
+    const qSpoken = st.bracket.quarter_spoken || [];
+    const qGroupA = st.bracket.quarter_groups[0] || [];
+    const qGroupB = st.bracket.quarter_groups[1] || [];
+    const qTotalMembers = qGroupA.length + qGroupB.length;
+    const teamASpokenCount = qSpoken.filter(n => qGroupA.includes(n)).length;
+    const teamBSpokenCount = qSpoken.filter(n => qGroupB.includes(n)).length;
+    // Next team: A goes first; when tied or A has fewer spoken, A is next
+    const nextTeamIdx = (st.phase === 'quarter_debate' && qSpoken.length < qTotalMembers)
+      ? (teamASpokenCount <= teamBSpokenCount ? 0 : 1)
+      : -1;
+
     ['Group A', 'Group B'].forEach((label, gi) => {
       const members = st.bracket.quarter_groups[gi] || [];
-      const spoken = st.bracket.quarter_spoken || [];
+      const spoken = qSpoken;
       const cls = gi === 0 ? 'group-a' : 'group-b';
-      html += `<div class="debate-group ${cls}">
-        <div class="debate-group-title">${label}</div>
+      const isNext = gi === nextTeamIdx;
+      const teamColor = gi === 0 ? '#0081C8' : '#EE334E';
+      const nextBadge = isNext ? ` <span style="font-size:0.65rem;background:${teamColor};color:#fff;padding:2px 7px;border-radius:10px;font-weight:700;letter-spacing:0.5px;">UP NEXT</span>` : '';
+      html += `<div class="debate-group ${cls}" style="${isNext ? `border:2px solid ${teamColor};` : ''}">
+        <div class="debate-group-title">${label}${nextBadge}</div>
         <div>`;
       members.forEach(name => {
         const hasSpoken = spoken.includes(name);
@@ -2030,14 +2065,22 @@ function renderGroups(st) {
 
 function renderAdvancementPreview(st) {
   const results = st.bracket.group_results;
-  const winners = results.map(r => r.winner).filter(Boolean);
-  const runnersUp = results
-    .filter(r => r.runner_up)
-    .map(r => ({ name: r.runner_up, votes: r.runner_up_votes }))
-    .sort((a, b) => b.votes - a.votes);
+  const winners = [...new Set(results.map(r => r.winner).filter(Boolean))];
+  const winnerSet = new Set(winners);
+
+  // Runners-up: exclude anyone already a winner; deduplicate, keeping highest votes
+  const runnerMap = new Map();
+  results.forEach(r => {
+    if (!r.runner_up || winnerSet.has(r.runner_up)) return;
+    const existing = runnerMap.get(r.runner_up);
+    if (!existing || r.runner_up_votes > existing.votes) {
+      runnerMap.set(r.runner_up, { name: r.runner_up, votes: r.runner_up_votes });
+    }
+  });
+  const runnersUp = [...runnerMap.values()].sort((a, b) => b.votes - a.votes);
   const needed = Math.max(0, 8 - winners.length);
 
-  let html = `<div class="advancement-preview"><h4>Quarter-Debate Advancement (8 spots)</h4>`;
+  let html = `<div class="advancement-preview"><h4>Team Debate Advancement (8 spots)</h4>`;
   winners.forEach(name => {
     html += `<div class="advance-row"><span class="advance-badge ab-winner">Winner</span>${name}</div>`;
   });
@@ -2279,12 +2322,37 @@ function renderAdminRoundControl(st) {
     html += dqSection(st);
   }
 
+  // ── Break phase ──
+  else if (st.phase === 'break') {
+    const breakMs = (st.breakDurationMinutes || 0) * 60 * 1000;
+    const elapsed = st.breakStartedAt ? (Date.now() - st.breakStartedAt) : 0;
+    const remaining = Math.max(0, breakMs - elapsed);
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    const remainingStr = `${mins}:${String(secs).padStart(2,'0')}`;
+    html += `<p class="muted" style="margin-bottom:10px;">Break in progress — ${remaining > 0 ? remainingStr + ' remaining' : 'time\'s up!'}.</p>
+    <p class="muted" style="font-size:0.8rem;">Use Phase Control → Team Debate when ready.</p>`;
+  }
+
   // ── Quarter-Debate phase ──
   else if (st.phase === 'quarter_debate') {
     const spoken = st.bracket.quarter_spoken || [];
-    const allMembers = [...(st.bracket.quarter_groups[0] || []), ...(st.bracket.quarter_groups[1] || [])];
+    const groupA = st.bracket.quarter_groups[0] || [];
+    const groupB = st.bracket.quarter_groups[1] || [];
+    const allMembers = [...groupA, ...groupB];
     const remaining = allMembers.filter(n => !spoken.includes(n) && !(st.currentSpeaker && st.currentSpeaker.name === n));
     const allSpoken = allMembers.length > 0 && allMembers.every(n => spoken.includes(n) || (st.currentSpeaker && st.currentSpeaker.name === n && st.currentSpeaker.timerState === 'stopped'));
+
+    // Alternation guidance
+    const teamASpoken = spoken.filter(n => groupA.includes(n)).length;
+    const teamBSpoken = spoken.filter(n => groupB.includes(n)).length;
+    const allActuallySpoken = spoken.length === allMembers.length;
+    if (!allActuallySpoken && allMembers.length > 0) {
+      const nextTeamIdx = teamASpoken <= teamBSpoken ? 0 : 1;
+      const nextTeamLabel = nextTeamIdx === 0 ? 'Group A' : 'Group B';
+      const nextColor = nextTeamIdx === 0 ? '#0081C8' : '#EE334E';
+      html += `<div style="margin-bottom:10px;padding:8px 12px;background:${nextColor}18;border-left:3px solid ${nextColor};border-radius:6px;font-size:0.85rem;font-weight:700;color:${nextColor};">Next up: ${nextTeamLabel}</div>`;
+    }
 
     html += `<button class="btn btn-primary btn-sm" onclick="adminDrawQuestion()">🎲 Draw Question</button>`;
     html += `<hr class="divider" />${timerControls()}`;
@@ -2293,16 +2361,16 @@ function renderAdminRoundControl(st) {
       html += `<div style="margin-top:8px;font-size:0.82rem;font-weight:700;">Select Next Speaker</div><div class="btn-row">`;
       [0, 1].forEach(gi => {
         const groupLabel = gi === 0 ? 'A' : 'B';
+        const teamColor = gi === 0 ? '#0081C8' : '#EE334E';
         (st.bracket.quarter_groups[gi] || []).forEach(name => {
           if (!spoken.includes(name) && !(st.currentSpeaker && st.currentSpeaker.name === name)) {
-            html += `<button class="btn btn-sm btn-outline" onclick='adminSetSpeaker(${safeJson(name)},${gi})' style="border-color:${gi===0?'#0081C8':'#EE334E'}">${groupLabel}: ${name}</button>`;
+            html += `<button class="btn btn-sm btn-outline" onclick='adminSetSpeaker(${safeJson(name)},${gi})' style="border-color:${teamColor};color:${teamColor}">${groupLabel}: ${name}</button>`;
           }
         });
       });
       html += `</div>`;
     }
 
-    const allActuallySpoken = spoken.length === allMembers.length;
     if (allActuallySpoken) {
       html += `<hr class="divider" /><p class="muted" style="margin-bottom:6px;">All ${allMembers.length} speakers done — open group voting.</p>`;
     }
@@ -2643,11 +2711,17 @@ let _qDraggedFrom = null;
 
 function computeAdvancing(st) {
   const results = st.bracket.group_results;
-  const winners = results.map(r => r.winner).filter(Boolean);
-  const runnersUp = results
-    .filter(r => r.runner_up)
-    .map(r => ({ name: r.runner_up, votes: r.runner_up_votes }))
-    .sort((a, b) => b.votes - a.votes);
+  const winners = [...new Set(results.map(r => r.winner).filter(Boolean))];
+  const winnerSet = new Set(winners);
+  const runnerMap = new Map();
+  results.forEach(r => {
+    if (!r.runner_up || winnerSet.has(r.runner_up)) return;
+    const existing = runnerMap.get(r.runner_up);
+    if (!existing || r.runner_up_votes > existing.votes) {
+      runnerMap.set(r.runner_up, { name: r.runner_up, votes: r.runner_up_votes });
+    }
+  });
+  const runnersUp = [...runnerMap.values()].sort((a, b) => b.votes - a.votes);
   const needed = Math.max(0, 8 - winners.length);
   return [...new Set([...winners, ...runnersUp.slice(0, needed).map(r => r.name)])].slice(0, 8);
 }
@@ -2712,21 +2786,32 @@ function cancelQuarterPreview() {
 async function confirmQuarterPreview() {
   const groupA = _quarterGroups.a;
   const groupB = _quarterGroups.b;
-  if (!confirm(`Start Quarter-Debate?\nGroup A: ${groupA.join(', ') || '(empty)'}\nGroup B: ${groupB.join(', ') || '(empty)'}`)) return;
+  if (!confirm(`Start Team Debate?\nGroup A: ${groupA.join(', ') || '(empty)'}\nGroup B: ${groupB.join(', ') || '(empty)'}`)) return;
   hide('#quarter-preview-overlay');
   await adminAdvance('start-quarter', { customGroups: [groupA, groupB] });
 }
 
+qs('#admin-start-break').addEventListener('click', async () => {
+  const st = S.serverState;
+  if (!st || st.phase !== 'group') { alert('Break can only be started after the group stage.'); return; }
+  const allGroupsDone = st.groups.every(g => g.status === 'done');
+  if (!allGroupsDone) { alert('Not all groups are complete yet.'); return; }
+  const minutes = parseInt(qs('#set-breakMinutes')?.value || '5');
+  if (!confirm(`Start ${minutes}-minute break?`)) return;
+  await adminAdvance('start-break', { breakMinutes: minutes });
+});
+
 qs('#admin-start-quarter').addEventListener('click', async () => {
   const st = S.serverState;
   if (!st) return;
+  if (st.phase !== 'group' && st.phase !== 'break') { alert('Team Debate can only be started after the group stage or break.'); return; }
   const allGroupsDone = st.groups.every(g => g.status === 'done');
   if (!allGroupsDone) { alert('Not all groups are complete yet.'); return; }
   showQuarterPreview(st);
 });
 qs('#admin-start-semi').addEventListener('click', async () => {
   const st = S.serverState;
-  if (st && st.bracket.quarter_winner_idx === null) { alert('Quarter result not set. Complete the Quarter-Debate first.'); return; }
+  if (st && st.bracket.quarter_winner_idx === null) { alert('Team Debate result not set. Complete the Team Debate first.'); return; }
   const winnerGroup = st.bracket.quarter_groups[st.bracket.quarter_winner_idx] || [];
   if (!confirm(`Advance to Semifinal with: ${winnerGroup.join(', ')}?`)) return;
   await adminAdvance('start-semi');
