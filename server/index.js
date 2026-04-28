@@ -403,6 +403,22 @@ app.post('/api/admin/timer', (req, res) => {
           }
         }
       }
+      if (phase === 'quarter_debate' && speakerNameForLog && st.bracket) {
+        if (!Array.isArray(st.bracket.quarter_spoken)) st.bracket.quarter_spoken = [];
+        if (!st.bracket.quarter_spoken.includes(speakerNameForLog)) {
+          st.bracket.quarter_spoken.push(speakerNameForLog);
+        }
+      }
+      if (phase === 'semi_final' && speakerNameForLog && st.bracket && st.bracket.semi_pairs) {
+        st.bracket.semi_pairs.forEach((pair, pairIdx) => {
+          if (pair.includes(speakerNameForLog)) {
+            if (!Array.isArray(st.bracket.semi_spoken[pairIdx])) st.bracket.semi_spoken[pairIdx] = [];
+            if (!st.bracket.semi_spoken[pairIdx].includes(speakerNameForLog)) {
+              st.bracket.semi_spoken[pairIdx].push(speakerNameForLog);
+            }
+          }
+        });
+      }
     }
   } else if (action === 'restart') {
     if (st.currentSpeaker) {
