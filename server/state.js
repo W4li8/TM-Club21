@@ -45,6 +45,10 @@ function freshBracket() {
     third_place_candidates: [],
     // 3rd place name
     third_place: null,
+    // true once admin broadcasts podium to all clients
+    podiumRevealed: false,
+    // { 'Group A': N, 'Group B': N } — snapshot after team debate voting closes
+    quarter_votes: null,
   };
 }
 

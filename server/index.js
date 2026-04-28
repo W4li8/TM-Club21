@@ -686,7 +686,7 @@ app.post('/api/admin/advance', (req, res) => {
     if (!group) { res.status(400).json({ error: 'Group not found' }); return; }
 
     // Require explicit winner
-    const { winner: vWinner, loser: vRunnerUp, loser_votes: vRunnerVotes } = votingTop2(st);
+    const { winner: vWinner, winner_votes: vWinnerVotes, loser: vRunnerUp, loser_votes: vRunnerVotes } = votingTop2(st);
     const winner = (data && data.winner && data.winner.trim()) ? data.winner.trim() : vWinner;
     if (!winner) {
       res.status(400).json({ error: 'A winner must be selected before completing the group.' });
@@ -704,7 +704,8 @@ app.post('/api/admin/advance', (req, res) => {
     const runner_up_votes = runner_up ? vRunnerVotes : 0;
 
     const idx = st.bracket.group_results.findIndex((r) => r.groupId === groupId);
-    const result = { groupId, winner, runner_up, runner_up_votes };
+    const winner_votes = votingWasForThisGroup ? vWinnerVotes : 0;
+    const result = { groupId, winner, winner_votes, runner_up, runner_up_votes };
     if (idx >= 0) st.bracket.group_results[idx] = result;
     else st.bracket.group_results.push(result);
 
@@ -766,6 +767,9 @@ app.post('/api/admin/advance', (req, res) => {
       const gB = st.voting.results['Group B'] || 0;
       winnerIdx = gA >= gB ? 0 : 1;
     }
+    if (!st.voting.active && st.voting.results) {
+      st.bracket.quarter_votes = { ...st.voting.results };
+    }
     st.bracket.quarter_winner_idx = winnerIdx ?? 0;
     st.currentSpeaker = null;
     st.currentQuestion = null;
@@ -804,11 +808,11 @@ app.post('/api/admin/advance', (req, res) => {
     bump();
 
   } else if (action === 'complete-final') {
-    const { winner, loser } = votingTop2(st);
+    const { winner, winner_votes, loser, loser_votes } = votingTop2(st);
     const finalWinner = (data && data.winner) || winner;
     const finalLoser = (data && data.loser) || loser;
     st.bracket.champion = finalWinner;
-    st.bracket.final_result = { winner: finalWinner, loser: finalLoser };
+    st.bracket.final_result = { winner: finalWinner, winner_votes, loser: finalLoser, loser_votes };
     st.currentSpeaker = null;
     st.currentQuestion = null;
     bump();
@@ -845,6 +849,13 @@ app.post('/api/admin/advance', (req, res) => {
     st.bracket.third_place = third;
     // Only close if 3rd place is resolved
     if (third || (data && data.thirdPlace !== undefined)) st.phase = 'closed';
+    bump();
+
+  } else if (action === 'show-podium') {
+    if (!st.bracket.champion || !st.bracket.third_place) {
+      return res.status(400).json({ error: 'Podium not ready' });
+    }
+    st.bracket.podiumRevealed = true;
     bump();
 
   } else if (action === 'close') {

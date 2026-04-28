@@ -1282,7 +1282,7 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
         <div class="podium-pillar"></div>
       </div>
     </div>
-    <button class="btn btn-gold" id="podium-close">Close</button>
+    <div id="podium-actions" class="btn-row" style="margin-top:16px;justify-content:center;"></div>
   </div>
 </div>
 
@@ -1317,6 +1317,7 @@ const S = {
   pollTimer: null,
   phases: {},
   settingsInitialized: false,
+  podiumShown: false,
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -1907,6 +1908,10 @@ function renderGroups(st) {
     setText('#podium-2nd', fr.loser || '—');
     setText('#podium-3rd', st.bracket.third_place || '—');
   }
+  if (st.bracket.podiumRevealed && !S.podiumShown) {
+    S.podiumShown = true;
+    showPodium(st);
+  }
 
   if (!st.groups || st.groups.length === 0) {
     body.innerHTML = `<div id="welcome-banner">
@@ -1953,8 +1958,9 @@ function renderGroups(st) {
       });
       html += `</ul>`;
       if (result) {
+        const winnerVotesTag = S.isAdmin && result.winner_votes ? ` <span style="color:var(--gray-mid);font-weight:400;">(${result.winner_votes}v)</span>` : '';
         html += `<div style="margin-top:6px;font-size:0.78rem;color:var(--gray);">
-          Winner: <strong style="color:var(--navy)">${result.winner || '—'}</strong>
+          Winner: <strong style="color:var(--navy)">${result.winner || '—'}</strong>${winnerVotesTag}
           ${result.runner_up ? `&nbsp;· Runner-up: <strong>${result.runner_up}</strong> (${result.runner_up_votes} votes)` : ''}
           ${S.isAdmin ? `<button class="btn btn-sm btn-outline" style="margin-left:8px;font-size:0.7rem;padding:2px 7px;" onclick="toggleEditWinner(${g.id})">✏ Edit</button>` : ''}
         </div>
@@ -2021,6 +2027,11 @@ function renderGroups(st) {
       const winnerLabel = st.bracket.quarter_winner_idx === 0 ? 'Group A' : 'Group B';
       html += `<div style="margin-top:8px;font-size:0.85rem;font-weight:700;color:var(--green);">${winnerLabel} advances to Semifinal ✓</div>`;
     }
+    if (S.isAdmin && st.bracket.quarter_votes) {
+      const qv = st.bracket.quarter_votes;
+      const entries = Object.entries(qv).sort((a, b) => b[1] - a[1]);
+      html += `<div style="margin-top:4px;font-size:0.75rem;color:var(--gray-mid);">Votes: ${entries.map(([k,v]) => `${k}: ${v}`).join(' · ')}</div>`;
+    }
   }
 
   // ── Semifinal ──
@@ -2031,14 +2042,16 @@ function renderGroups(st) {
       const spoken = (st.bracket.semi_spoken && st.bracket.semi_spoken[i]) || [];
       const isSpeaking0 = st.currentSpeaker && st.currentSpeaker.name === pair[0];
       const isSpeaking1 = st.currentSpeaker && st.currentSpeaker.name === pair[1];
+      const votes0 = S.isAdmin && result ? ` <span style="font-size:0.72rem;color:var(--gray-mid);">(${result.winner === pair[0] ? result.winner_votes : result.loser_votes}v)</span>` : '';
+      const votes1 = S.isAdmin && result ? ` <span style="font-size:0.72rem;color:var(--gray-mid);">(${result.winner === pair[1] ? result.winner_votes : result.loser_votes}v)</span>` : '';
       html += `<div class="matchup-card ${result ? 'done' : (isSpeaking0 || isSpeaking1 ? 'active' : '')}">
         <div>
-          <div class="matchup-name" style="${result && result.winner === pair[0] ? 'color:var(--green)' : ''}">${isSpeaking0 ? '🎤 ' : spoken.includes(pair[0]) ? '✓ ' : ''}${pair[0] || '?'}</div>
+          <div class="matchup-name" style="${result && result.winner === pair[0] ? 'color:var(--green)' : ''}">${isSpeaking0 ? '🎤 ' : spoken.includes(pair[0]) ? '✓ ' : ''}${pair[0] || '?'}${votes0}</div>
           ${result && result.winner === pair[0] ? '<div class="matchup-winner">Winner ✓</div>' : ''}
         </div>
         <div class="matchup-vs">vs</div>
         <div>
-          <div class="matchup-name" style="${result && result.winner === pair[1] ? 'color:var(--green)' : ''}">${isSpeaking1 ? '🎤 ' : spoken.includes(pair[1]) ? '✓ ' : ''}${pair[1] || '?'}</div>
+          <div class="matchup-name" style="${result && result.winner === pair[1] ? 'color:var(--green)' : ''}">${isSpeaking1 ? '🎤 ' : spoken.includes(pair[1]) ? '✓ ' : ''}${pair[1] || '?'}${votes1}</div>
           ${result && result.winner === pair[1] ? '<div class="matchup-winner">Winner ✓</div>' : ''}
         </div>
       </div>`;
@@ -2049,16 +2062,26 @@ function renderGroups(st) {
   if (st.bracket.finalists && st.bracket.finalists.length > 0) {
     html += `<p class="phase-badge" style="margin-top:12px;background:var(--gold-dark);">${st.settings.stageLabels.final} 🏆</p>`;
     html += `<div class="matchup-card ${st.bracket.champion ? 'done' : ''}">`;
+    const fr = st.bracket.final_result || {};
     st.bracket.finalists.forEach((name, i) => {
       const isSpeaking = st.currentSpeaker && st.currentSpeaker.name === name;
       const isChamp = st.bracket.champion === name;
+      const fVotes = S.isAdmin && st.bracket.champion
+        ? (isChamp ? fr.winner_votes : fr.loser_votes)
+        : null;
+      const votesTag = fVotes != null ? ` <span style="font-size:0.72rem;color:var(--gray-mid);">(${fVotes}v)</span>` : '';
       if (i === 1) html += `<div class="matchup-vs">vs</div>`;
       html += `<div>
-        <div class="matchup-name" style="${isChamp ? 'color:var(--gold-dark)' : ''}">${isSpeaking ? '🎤 ' : ''}${name}</div>
+        <div class="matchup-name" style="${isChamp ? 'color:var(--gold-dark)' : ''}">${isSpeaking ? '🎤 ' : ''}${name}${votesTag}</div>
         ${isChamp ? '<div class="matchup-winner" style="color:var(--gold-dark)">Champion 🏆</div>' : ''}
       </div>`;
     });
     html += `</div>`;
+    if (S.isAdmin && st.bracket.champion && st.bracket.third_place) {
+      html += `<div style="margin-top:10px;">
+        <button class="btn btn-gold btn-sm" onclick="showPodium(S.serverState)">🏅 Show Podium</button>
+      </div>`;
+    }
   }
 
   body.innerHTML = html;
@@ -2509,10 +2532,32 @@ function showPodium(st) {
   setText('#podium-1st', st.bracket.champion || '—');
   setText('#podium-2nd', fr.loser || '—');
   setText('#podium-3rd', st.bracket.third_place || '—');
+  const actions = qs('#podium-actions');
+  if (actions) {
+    const canBroadcast = S.isAdmin && !st.bracket.podiumRevealed;
+    actions.innerHTML = (canBroadcast
+      ? `<button class="btn btn-gold" id="podium-broadcast">📢 Show to Everyone</button>`
+      : '') +
+      `<button class="btn btn-outline" id="podium-close">Close</button>`;
+    qs('#podium-close').addEventListener('click', () => hide('#podium-overlay'));
+    if (canBroadcast) {
+      qs('#podium-broadcast').addEventListener('click', adminBroadcastPodium);
+    }
+  }
   show('#podium-overlay');
 }
 
-qs('#podium-close').addEventListener('click', () => hide('#podium-overlay'));
+async function adminBroadcastPodium() {
+  try {
+    await api('POST', '/api/admin/advance', { action: 'show-podium' });
+    S.podiumShown = true;
+    const st = await api('GET', '/api/state');
+    S.serverState = st;
+    S.lastVersion = st.version;
+    render(st);
+    showPodium(st);
+  } catch (e) { alert(e.message); }
+}
 
 async function adminAdvance(action, data) {
   try {
