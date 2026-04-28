@@ -1289,9 +1289,10 @@ hr.divider { border: none; border-top: 1px solid var(--gray-light); margin: 12px
 <!-- Quarter groups preview / drag-drop editor -->
 <div id="quarter-preview-overlay" class="hidden">
   <div class="quarter-preview-box">
-    <h3>Team Debate Groups</h3>
-    <p class="muted" style="margin-bottom:14px;font-size:0.82rem;">Drag names between groups to balance matchups, then confirm.</p>
+    <h3>Team Debate Groups <span id="quarter-selected-count" style="font-size:0.82rem;font-weight:400;color:var(--gray-mid);"></span></h3>
+    <p class="muted" style="margin-bottom:14px;font-size:0.82rem;">Drag names between groups to balance matchups. Drag to/from the pool to add or remove participants.</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" id="quarter-preview-groups"></div>
+    <div style="margin-top:12px;" id="quarter-preview-pool"></div>
     <div class="btn-row" style="margin-top:16px;">
       <button class="btn btn-outline btn-sm" onclick="cancelQuarterPreview()">Cancel</button>
       <button class="btn btn-gold" onclick="confirmQuarterPreview()">Confirm &amp; Start Team Debate</button>
@@ -2705,7 +2706,7 @@ async function adminTiebreak(candidateName) {
 
 // ── Quarter groups preview & drag-drop ────────────────────────────────────────
 
-let _quarterGroups = { a: [], b: [] };
+let _quarterGroups = { a: [], b: [], pool: [] };
 let _qDraggedName = null;
 let _qDraggedFrom = null;
 
@@ -2729,52 +2730,72 @@ function computeAdvancing(st) {
 function showQuarterPreview(st) {
   const advancing = computeAdvancing(st);
   const shuffled = [...advancing].sort(() => Math.random() - 0.5);
-  _quarterGroups = { a: shuffled.slice(0, 4), b: shuffled.slice(4) };
+  const advSet = new Set(shuffled);
+  const pool = (st.participants || [])
+    .filter(p => p.role === 'competitor' && !advSet.has(p.name))
+    .map(p => p.name);
+  _quarterGroups = { a: shuffled.slice(0, 4), b: shuffled.slice(4), pool };
   renderQuarterPreview();
   show('#quarter-preview-overlay');
 }
 
 function renderQuarterPreview() {
   const container = qs('#quarter-preview-groups');
-  const defs = [
+  const poolContainer = qs('#quarter-preview-pool');
+  const countEl = qs('#quarter-selected-count');
+  const totalSelected = _quarterGroups.a.length + _quarterGroups.b.length;
+  if (countEl) countEl.textContent = `(${totalSelected}/8 selected)`;
+
+  const groupDefs = [
     { key: 'a', label: 'Group A', cls: 'group-a', color: '#0081C8' },
     { key: 'b', label: 'Group B', cls: 'group-b', color: '#EE334E' },
   ];
-  container.innerHTML = defs.map(g => {
-    const chips = _quarterGroups[g.key].map(name =>
-      `<div class="quarter-chip" draggable="true" data-name="${name}" data-group="${g.key}">${name}</div>`
-    ).join('');
+
+  const makeChips = (names, groupKey) => names.map(name =>
+    `<div class="quarter-chip" draggable="true" data-name="${name}" data-group="${groupKey}">${name}</div>`
+  ).join('');
+
+  container.innerHTML = groupDefs.map(g => {
     return `<div class="quarter-drop-zone ${g.cls}" id="qzone-${g.key}">
       <div class="debate-group-title" style="color:${g.color};margin-bottom:8px;">${g.label} (${_quarterGroups[g.key].length})</div>
-      ${chips || '<p class="muted" style="font-size:0.78rem;">Drop here</p>'}
+      ${makeChips(_quarterGroups[g.key], g.key) || '<p class="muted" style="font-size:0.78rem;">Drop here</p>'}
     </div>`;
   }).join('');
 
-  container.querySelectorAll('.quarter-chip').forEach(chip => {
-    chip.addEventListener('dragstart', () => {
-      _qDraggedName = chip.dataset.name;
-      _qDraggedFrom = chip.dataset.group;
-      chip.classList.add('dragging');
-    });
-    chip.addEventListener('dragend', () => {
-      chip.classList.remove('dragging');
-      container.querySelectorAll('.quarter-drop-zone').forEach(z => z.classList.remove('drag-over'));
-    });
-  });
+  const poolChips = makeChips(_quarterGroups.pool, 'pool');
+  poolContainer.innerHTML = `<div class="quarter-drop-zone" id="qzone-pool" style="border-color:var(--gray-mid);background:var(--gray-lightest,#f7f7f7);">
+    <div style="font-size:0.78rem;font-weight:700;color:var(--gray-mid);margin-bottom:6px;">Available participants (drag to add)</div>
+    ${poolChips || '<p class="muted" style="font-size:0.78rem;">No additional participants</p>'}
+  </div>`;
 
-  container.querySelectorAll('.quarter-drop-zone').forEach(zone => {
-    const key = zone.id.replace('qzone-', '');
-    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
-    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-    zone.addEventListener('drop', e => {
-      e.preventDefault();
-      zone.classList.remove('drag-over');
-      if (!_qDraggedName || _qDraggedFrom === key) return;
-      _quarterGroups[_qDraggedFrom] = _quarterGroups[_qDraggedFrom].filter(n => n !== _qDraggedName);
-      _quarterGroups[key] = [..._quarterGroups[key], _qDraggedName];
-      _qDraggedName = null;
-      _qDraggedFrom = null;
-      renderQuarterPreview();
+  const allZones = [container, poolContainer];
+  allZones.forEach(root => {
+    root.querySelectorAll('.quarter-chip').forEach(chip => {
+      chip.addEventListener('dragstart', () => {
+        _qDraggedName = chip.dataset.name;
+        _qDraggedFrom = chip.dataset.group;
+        chip.classList.add('dragging');
+      });
+      chip.addEventListener('dragend', () => {
+        chip.classList.remove('dragging');
+        document.querySelectorAll('.quarter-drop-zone').forEach(z => z.classList.remove('drag-over'));
+      });
+    });
+
+    root.querySelectorAll('.quarter-drop-zone').forEach(zone => {
+      const key = zone.id.replace('qzone-', '');
+      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+      zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        if (!_qDraggedName || _qDraggedFrom === key) return;
+        _quarterGroups[_qDraggedFrom] = _quarterGroups[_qDraggedFrom].filter(n => n !== _qDraggedName);
+        _quarterGroups[key] = [..._quarterGroups[key], _qDraggedName];
+        _qDraggedName = null;
+        _qDraggedFrom = null;
+        renderQuarterPreview();
+      });
     });
   });
 }
@@ -2786,7 +2807,12 @@ function cancelQuarterPreview() {
 async function confirmQuarterPreview() {
   const groupA = _quarterGroups.a;
   const groupB = _quarterGroups.b;
-  if (!confirm(`Start Team Debate?\nGroup A: ${groupA.join(', ') || '(empty)'}\nGroup B: ${groupB.join(', ') || '(empty)'}`)) return;
+  const total = groupA.length + groupB.length;
+  if (total !== 8) {
+    if (!confirm(`Warning: ${total} debaters selected (expected 8).\nGroup A: ${groupA.join(', ') || '(empty)'}\nGroup B: ${groupB.join(', ') || '(empty)'}\n\nProceed anyway?`)) return;
+  } else {
+    if (!confirm(`Start Team Debate?\nGroup A: ${groupA.join(', ') || '(empty)'}\nGroup B: ${groupB.join(', ') || '(empty)'}`)) return;
+  }
   hide('#quarter-preview-overlay');
   await adminAdvance('start-quarter', { customGroups: [groupA, groupB] });
 }

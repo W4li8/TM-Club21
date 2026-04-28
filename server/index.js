@@ -552,6 +552,9 @@ app.post('/api/admin/open-voting', (req, res) => {
     .filter((p) => !excluded.has(p.name))
     .map((p) => p.name);
 
+  const initialResults = {};
+  candidates.forEach((c) => { initialResults[c] = 0; });
+
   st.voting = {
     active: true,
     windowSeconds: windowSeconds || st.settings.votingWindowSeconds,
@@ -559,7 +562,7 @@ app.post('/api/admin/open-voting', (req, res) => {
     votes: {},
     eligibleVoters: eligible,
     candidates,
-    results: null,
+    results: initialResults,
     tiebreakAdminVoteUsed: false,
   };
   bump();
@@ -593,7 +596,7 @@ app.post('/api/admin/tiebreak-vote', (req, res) => {
   const { adminName, candidateName } = req.body;
   const st = getState();
 
-  if (!st.voting.results) return res.status(400).json({ error: 'No results yet' });
+  if (st.voting.active || !st.voting.results) return res.status(400).json({ error: 'No results yet' });
   if (st.voting.tiebreakAdminVoteUsed) return res.status(400).json({ error: 'Tiebreak already used' });
 
   // Step 1: Remove earliest-registered admin's vote from tally
@@ -629,7 +632,7 @@ app.post('/api/admin/tiebreak-vote', (req, res) => {
 // ── Admin: Advance phase ──────────────────────────────────────────────────────
 
 function votingTop2(st) {
-  if (!st.voting.results) return { winner: null, loser: null, winner_votes: 0, loser_votes: 0 };
+  if (!st.voting.results || st.voting.active) return { winner: null, loser: null, winner_votes: 0, loser_votes: 0 };
   const entries = Object.entries(st.voting.results).sort((a, b) => b[1] - a[1]);
   return {
     winner: entries[0]?.[0] ?? null,
@@ -695,7 +698,7 @@ app.post('/api/admin/advance', (req, res) => {
     // belongs to this group before trusting the runner-up value.
     const groupMemberSet = new Set(group.members);
     const votingCandidates = st.voting.candidates || [];
-    const votingWasForThisGroup = votingCandidates.some((c) => groupMemberSet.has(c)) && !!st.voting.results;
+    const votingWasForThisGroup = votingCandidates.some((c) => groupMemberSet.has(c)) && !st.voting.active && !!st.voting.results;
     const runner_up = (votingWasForThisGroup && vRunnerUp && groupMemberSet.has(vRunnerUp) && vRunnerUp !== winner)
       ? vRunnerUp : null;
     const runner_up_votes = runner_up ? vRunnerVotes : 0;
@@ -758,7 +761,7 @@ app.post('/api/admin/advance', (req, res) => {
   } else if (action === 'complete-quarter') {
     // Auto-detect winner group from voting ('Group A' vs 'Group B')
     let winnerIdx = data && data.winnerGroupIdx != null ? data.winnerGroupIdx : null;
-    if (winnerIdx === null && st.voting.results) {
+    if (winnerIdx === null && !st.voting.active && st.voting.results) {
       const gA = st.voting.results['Group A'] || 0;
       const gB = st.voting.results['Group B'] || 0;
       winnerIdx = gA >= gB ? 0 : 1;
